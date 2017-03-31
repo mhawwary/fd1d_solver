@@ -11,6 +11,7 @@ int Ndof = Nelem * n_sol_var ;
 int RK_order=2;
 int scheme_order=1;  // scheme order
 int *stencil_index=nullptr;
+double *FD_coeff=nullptr;
 
 double gtime=0;
 double t_init;
@@ -36,4 +37,5 @@ double *Qinit=nullptr;
 double *Qn=nullptr;
 double *Qex=nullptr;
 
-double *flux_upw=nullptr;
+double *Resid=nullptr;
+

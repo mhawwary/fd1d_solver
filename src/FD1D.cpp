@@ -2,13 +2,16 @@
 //#include "SimData.hpp"
 //#include "GridData.hpp"
 #include "global_var.h"
+#include"space_solve.h"
+#include"time_solve.h"
+//#include"invflux.h"
+#include"post_process.h"
 
 
 void read_input(char** argv_);
 void setsizes();
 void InitSim();
 void RunSim();
-void ComputeOneStep();
 void PostProcess();
 
 
@@ -75,7 +78,6 @@ void read_input(char** argv){
     return;
 }
 
-
 void setsizes(){
 
     register int i;
@@ -89,9 +91,10 @@ void setsizes(){
     Qn  = new double[Nfaces];
     Qex = new double[Nfaces];
 
-    flux_upw = new double [Nfaces];
+    Resid = new double [Nfaces];
 
     stencil_index = new int[scheme_order+1];
+    FD_coeff = new int[scheme_order+1];
 
     return;
 
@@ -111,6 +114,8 @@ void InitSim(){
 
 void RunSim(){
 
+    setup_stencil();
+
     int n=0;
 
     gtime=0;
@@ -126,12 +131,4 @@ void RunSim(){
     return;
 }
 
-void ComputeOneStep(){
-
-    compute_residual();
-
-    time_integrate();
-
-    return;
-}
 
