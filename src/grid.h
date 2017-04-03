@@ -1,13 +1,19 @@
-
+#pragma once
+#include "global_var.h"
+#include "general_tools.h"
 
 void generate_grid();
 
 
-generate_grid(){
+void generate_grid(){
+
+    register int i;
+
+    dx=(xf-x0)/Nelem;
 
     for(i=0; i<Nfaces; i++) {
 
-        X[i]   = (xf-x0) * (i)   / Nfaces + x0 ;  // node 0, element i
+        X[i]   = dx * (i)  + x0 ;  // node 0, element i
     }
 
     for (i=0; i<Nelem; i++) {

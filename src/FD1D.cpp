@@ -1,16 +1,15 @@
 #include "general_tools.h"
-//#include "SimData.hpp"
-//#include "GridData.hpp"
 #include "global_var.h"
-#include"space_solve.h"
-#include"time_solve.h"
-//#include"invflux.h"
-#include"post_process.h"
+//#include "space_solve.h"
+//#include "time_solve.h"
+#include "post_process.h"
+#include "solver_func.h"
+#include "grid.h"
 
 
 void read_input(char** argv_);
 void setsizes();
-void InitSim();
+void InitSim(char** argv);
 void RunSim();
 void PostProcess();
 
@@ -22,39 +21,16 @@ int main(int argc, char** argv){
         cout << "ERROR: No inputs are specified ... " << endl; return(0);
     }
 
-    read_input(argv);
-
-    generate_grid();
-
-    InitSim();
+    InitSim(argv);
 
     RunSim();
 
-
-//    std::string input_fname;     // input file name
-
-//    input_fname = argv[argc-1];  // input file name with directory
-
-//    SimData  simdata_;
-
-//    GridData meshdata_;
-
-//    simdata_.Parse(input_fname);  // Setup and parse input parameters
-
-//    InitSim(simdata_, meshdata_);           // Preprocessing steps
-
-//    RunSim(simdata_, meshdata_);            // Main Solution Loop
-
-//    PostProcess(simdata_, meshdata_);       // Dumping Simulation Post Processing data
-
+    PostProcess();
 
     return 0;
 }
 
-
 void read_input(char** argv){
-
-    Nelem = atof(argv[1]);
 
     // Sample prompt input:  Nelem Max_time cflno./dt AA
     Nelem = atof(argv[1]);      // Number of elements
@@ -62,6 +38,8 @@ void read_input(char** argv){
     CFL = atof(argv[3]);      // CFL number
     //dt = atof(argv[3]);       // time step
     a_wave    = atof(argv[4]);      // Wave speed
+    scheme_order = atof(argv[5]); // scheme order
+    RK_order = atof(argv[6]); // RK order
 
     Nfaces = Nelem + 1;
     Ndof = Nelem;
@@ -74,13 +52,13 @@ void read_input(char** argv){
     cout << "dt:  "<<dt<<"\t"<< "dx:  "<<dx<<endl;
     cout << "required no. of time steps: "<<max_time/dt<<endl;
     cout << "Number of Elements:  "<<Nelem<<endl;
+    cout << "Scheme Order: "<<scheme_order<<endl;
+    cout << "RK_order:  "<< RK_order << endl;
 
     return;
 }
 
 void setsizes(){
-
-    register int i;
 
     X     = new double[Nfaces];
 
@@ -88,33 +66,63 @@ void setsizes(){
     local_cfl = new double[Nelem];
 
     Qinit  = new double[Nfaces];
-    Qn  = new double[Nfaces];
     Qex = new double[Nfaces];
 
     Resid = new double [Nfaces];
 
     stencil_index = new int[scheme_order+1];
-    FD_coeff = new int[scheme_order+1];
+    FD_coeff = new double [scheme_order+1];
+
+    if(scheme_order==1){
+        Nghost_l = 1;
+        Nghost_r=0;
+
+    }else if(scheme_order==2){
+        Nghost_l=1;
+        Nghost_r=1;
+
+    }else if(scheme_order==3){
+        Nghost_l=2;
+        Nghost_r=1;
+
+    }else if(scheme_order==4){
+        Nghost_l=2;
+        Nghost_r=2;
+    }
+
+    Qn = new double[ Nfaces];
+
+    Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
 
     return;
 
 }
 
-void InitSim(){
+void InitSim(char** argv){
 
-    register int i,j;
+    read_input(argv);
 
-    for( i=0; i<Nfaces; i++ )
-        Qinit[i] = sin(PI*X[i]);
+    setsizes();
 
-    //initial_solution_dumping();
+    generate_grid();
+
+    setup_stencil();
+
+    register int i;
+
+    for( i=0; i<Nfaces; i++ ){
+
+        Qinit[i] = sin(2*PI*X[i]);
+
+        Qn[i+Nghost_l] = Qinit[i];
+    }
+
+    initial_solution_dumping();
 
     return;
 }
 
 void RunSim(){
-
-    setup_stencil();
 
     int n=0;
 
@@ -125,10 +133,41 @@ void RunSim(){
         gtime += dt;  n++;
 
         ComputeOneStep();
+
+        //intermediate_solution_dump(n, gtime);
     }
 
+    cout << "\nNo. of Iterations:  "<<n<<endl;
+    cout << "\nActual time:  "<<max_time<<endl;
 
     return;
 }
+
+
+void PostProcess(){
+
+    double L1_norm=0.0;
+    double L2_norm=0.0;
+
+    final_solution_dump();
+
+    ComputeError(L1_norm, L2_norm);
+
+    error_dumping(L1_norm, L2_norm);
+
+    return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
