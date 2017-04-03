@@ -8,6 +8,7 @@ void setup_stencil();
 void ComputeOneStep();
 
 void compute_residual();
+void compute_residual1();
 
 void update_ghost_sol();
 
@@ -74,6 +75,171 @@ void setup_stencil(){
         FD_coeff [3] =  -2.0/3.0;
         FD_coeff [4] =   1.0/12.0;
     }
+
+    return;
+}
+
+void compute_residual1(){
+
+    register int i,j;
+
+    int s=0;
+
+    double temp=0.0;
+
+    if(scheme_order==1){
+
+        temp += Qn[0] * FD_coeff[0];
+
+        temp += Qn[Nfaces-2] * FD_coeff[1];
+
+        Resid[0] = -temp/dx;
+
+        for(i=1; i<Nfaces; i++){
+
+            temp=0.0;
+
+            for(j=0; j<scheme_order+1; j++){
+
+                s = stencil_index[j];
+                temp += Qn[i+s] * FD_coeff[j];
+            }
+
+            Resid[i] =  - temp / dx;
+        }
+
+
+    }else if (scheme_order==2){
+
+        i=0; temp=0.0;
+
+        for(j=0; j<scheme_order; j++){
+
+            s = stencil_index[j];
+            temp += Qn[i+s] * FD_coeff[j];
+        }
+
+        temp += Qn[Nfaces-2] * FD_coeff[2];
+
+        Resid[i] = -temp/dx;
+
+        for(i=1; i<Nfaces-1; i++){
+
+            temp=0.0;
+
+            for(j=0; j<scheme_order+1; j++){
+
+                s = stencil_index[j];
+                temp += Qn[i+s] * FD_coeff[j];
+            }
+
+            Resid[i] =  - temp / dx;
+        }
+
+        i=Nfaces-1;
+
+        temp=0.0;
+
+        temp += Qn[1] * FD_coeff[0];
+
+        for(j=1; j<scheme_order+1; j++){
+
+            s = stencil_index[j];
+            temp += Qn[i+s] * FD_coeff[j];
+        }
+
+        Resid[i] = -temp/dx;
+
+
+
+    }else if(scheme_order==3){
+
+        i=0; temp=0.0;
+
+        for(j=0; j<scheme_order-1; j++){
+
+            s = stencil_index[j];
+            temp += Qn[i+s] * FD_coeff[j];
+        }
+
+        temp += Qn[Nfaces-2] * FD_coeff[2];
+
+        temp += Qn[Nfaces-3] * FD_coeff[3];
+
+        Resid[i] = -temp/dx;
+
+        for(i=1; i<Nfaces-1; i++){
+
+            temp=0.0;
+
+            for(j=0; j<scheme_order+1; j++){
+
+                s = stencil_index[j];
+                temp += Qn[i+s] * FD_coeff[j];
+            }
+
+            Resid[i] =  - temp / dx;
+        }
+
+        i=Nfaces-1;
+
+        temp=0.0;
+
+        temp += Qn[1] * FD_coeff[0];
+
+        for(j=1; j<scheme_order+1; j++){
+
+            s = stencil_index[j];
+            temp += Qn[i+s] * FD_coeff[j];
+        }
+
+        Resid[i] = -temp/dx;
+
+    }else if(scheme_order==4){
+
+        i=0; temp=0.0;
+
+        for(j=0; j<3; j++){
+
+            s = stencil_index[j];
+            temp += Qn[i+s] * FD_coeff[j];
+        }
+
+        temp += Qn[Nfaces-2] * FD_coeff[3];
+        temp += Qn[Nfaces-3] * FD_coeff[4];
+
+        Resid[i] = -temp/dx;
+
+        for(i=1; i<Nfaces-1; i++){
+
+            temp=0.0;
+
+            for(j=0; j<scheme_order+1; j++){
+
+                s = stencil_index[j];
+                temp += Qn[i+s] * FD_coeff[j];
+            }
+
+            Resid[i] =  - temp / dx;
+        }
+
+        i=Nfaces-1;
+
+        temp=0.0;
+
+        temp += Qn[1] * FD_coeff[0];
+        temp += Qn[2] * FD_coeff[1];
+
+        for(j=2; j<scheme_order+1; j++){
+
+            s = stencil_index[j];
+            temp += Qn[i+s] * FD_coeff[j];
+        }
+
+        Resid[i] = -temp/dx;
+
+    }
+
 
     return;
 }
@@ -202,9 +368,9 @@ void update_ghost_sol(){
 
 void ComputeOneStep(){
 
-    update_ghost_sol();
+    //update_ghost_sol();
 
-    compute_residual();
+    compute_residual1();
 
     time_integrate();
 
@@ -243,9 +409,9 @@ void fwdEuler(){
 
     register int i;
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = Qn[i] + dt * Resid[i-Nghost_l];
+        Qn[i] = Qn[i] + dt * Resid[i];
     }
 
     //Qn[Netot-1] = Qn[Nghost_l];
@@ -258,30 +424,30 @@ void SSPRK22(){
     register int i;
 
     double *q_temp=nullptr;
-    q_temp = new double[Netot];
+    q_temp = new double[Nfaces];
 
-    for(i=0;i<Netot;i++)  q_temp[i]=Qn[i];
+    for(i=0;i<Nfaces;i++)  q_temp[i]=Qn[i];
 
     // Step1:
     //-----------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = q_temp[i] + dt * Resid[i-Nghost_l];
+        Qn[i] = q_temp[i] + dt * Resid[i];
     }
 
     //Qn[Netot-1] = Qn[Nghost_l];
 
-    update_ghost_sol();
+    //update_ghost_sol();
 
-    compute_residual();
+    compute_residual1();
 
     // Step2:
     //------------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = 0.5 * ( q_temp[i] +  Qn[i] + dt * Resid[i-Nghost_l] );
+        Qn[i] = 0.5 * ( q_temp[i] +  Qn[i] + dt * Resid[i] );
     }
 
     //Qn[Netot-1] = Qn[Nghost_l];
@@ -296,46 +462,46 @@ void SSPRK33(){
     register int i;
 
     double *q_temp=nullptr;
-    q_temp = new double[Netot];
+    q_temp = new double[Nfaces];
 
-    for(i=0;i<Netot;i++)  q_temp[i]=Qn[i];
+    for(i=0;i<Nfaces;i++)  q_temp[i]=Qn[i];
 
     // Step1:
     //-----------
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = q_temp[i] + dt * Resid[i-Nghost_l];
+        Qn[i] = q_temp[i] + dt * Resid[i];
     }
 
     //Qn[Netot-1] = Qn[Nghost_l];
 
-    update_ghost_sol();
+    //update_ghost_sol();
 
-    compute_residual();
+    compute_residual1();
 
     // Step2:
     //------------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = ( 0.75 *  q_temp[i] ) + 0.25 *( Qn[i] + dt * Resid[i-Nghost_l] ) ;
+        Qn[i] = ( 0.75 *  q_temp[i] ) + 0.25 *( Qn[i] + dt * Resid[i] ) ;
     }
 
     //Qn[Netot-1] = Qn[Nghost_l];
 
-    update_ghost_sol();
+    //update_ghost_sol();
 
-    compute_residual();
+    compute_residual1();
 
     //for(i=0;i<Netot;i++)  q_temp[i]=Qn[i];
 
     // Step3:
     //--------------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
         Qn[i] = ( (1.0/3.0) *  q_temp[i] )
-                + (2.0/3.0) *( Qn[i] + dt * Resid[i-Nghost_l] ) ;
+                + (2.0/3.0) *( Qn[i] + dt * Resid[i] ) ;
     }
 
     //Qn[Netot-1] = Qn[Nghost_l];

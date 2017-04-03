@@ -90,8 +90,7 @@ void setsizes(){
         Nghost_r=2;
     }
 
-    Netot = Nfaces + Nghost_l;
-    Qn = new double[ Netot ];
+    Qn = new double[ Nfaces];
 
     //Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
 
@@ -115,7 +114,7 @@ void InitSim(char** argv){
 
         Qinit[i] = sin(2*PI*X[i]);
 
-        Qn[i+Nghost_l] = Qinit[i];
+        Qn[i] = Qinit[i];
     }
 
     initial_solution_dumping();

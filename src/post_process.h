@@ -20,7 +20,7 @@ void initial_solution_dumping(){
 
     FILE* sol_out=fopen("./output/u_initial.dat","w");
 
-    for(i=Nghost_l;i<Nfaces+Nghost_l;i++)
+    for(i=0;i<Nfaces;i++)
     {
         fprintf(sol_out, "%2.10e\n", Qn[i]);
     }
@@ -60,7 +60,7 @@ void final_solution_dump(){
 
     FILE* sol_out=fopen(fname,"w");
 
-    for(i=Nghost_l; i<Netot; i++)
+    for(i=0; i<Nfaces; i++)
     {
         fprintf(sol_out, "%2.10e\n", Qn[i]);
     }
