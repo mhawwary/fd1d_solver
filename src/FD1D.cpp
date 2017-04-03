@@ -12,6 +12,7 @@ void setsizes();
 void InitSim(char** argv);
 void RunSim();
 void PostProcess();
+void Reset_vars();
 
 
 int main(int argc, char** argv){
@@ -26,6 +27,8 @@ int main(int argc, char** argv){
     RunSim();
 
     PostProcess();
+
+    Reset_vars();
 
     return 0;
 }
@@ -75,22 +78,22 @@ void setsizes(){
 
     if(scheme_order==1){
         Nghost_l = 1;
-        Nghost_r=0;
+        Nghost_r = 0;
 
     }else if(scheme_order==2){
-        Nghost_l=1;
-        Nghost_r=1;
+        Nghost_l = 1;
+        Nghost_r = 1;
 
     }else if(scheme_order==3){
-        Nghost_l=2;
-        Nghost_r=1;
+        Nghost_l = 2;
+        Nghost_r = 1;
 
     }else if(scheme_order==4){
-        Nghost_l=2;
-        Nghost_r=2;
+        Nghost_l = 2;
+        Nghost_r = 2;
     }
 
-    Qn = new double[ Nfaces];
+    Qn = new double[ Nfaces ];
 
     Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
 
@@ -116,7 +119,7 @@ void InitSim(char** argv){
 
         Qn[i] = Qinit[i];
 
-        //_print(i,Qn[i]);
+        _print(i,Qn[i]);
 
         //update_ghost_sol();
     }
@@ -139,7 +142,7 @@ void RunSim(){
 
         ComputeOneStep();
 
-        //initial_ghost_sol_dump();
+        initial_ghost_sol_dump();
 
         //intermediate_solution_dump(n, gtime);
     }
@@ -166,6 +169,26 @@ void PostProcess(){
 }
 
 
+void Reset_vars(){
+
+    emptyarray(Qn);
+    emptyarray(Qtemp);
+    emptyarray(Qex);
+    emptyarray(Qinit);
+
+    emptyarray(X);
+
+    emptyarray(h_j);
+    emptyarray(local_cfl);
+
+    emptyarray(Resid);
+
+    emptyarray(stencil_index);
+
+    emptyarray(FD_coeff);
+
+    return;
+}
 
 
 
