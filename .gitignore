@@ -9,6 +9,7 @@
 *~
 *.*~
 .fuse_hidden*
+*.cpp.autosave
 
 # Visualization Output Files
 post_process/
