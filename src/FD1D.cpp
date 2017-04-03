@@ -114,9 +114,14 @@ void InitSim(char** argv){
 
         Qinit[i] = sin(2*PI*X[i]);
 
-        Qn[i+Nghost_l] = Qinit[i];
+        Qn[i] = Qinit[i];
+
+        //_print(i,Qn[i]);
+
+        //update_ghost_sol();
     }
 
+    //initial_ghost_sol_dump();
     initial_solution_dumping();
 
     return;
@@ -133,6 +138,8 @@ void RunSim(){
         gtime += dt;  n++;
 
         ComputeOneStep();
+
+        //initial_ghost_sol_dump();
 
         //intermediate_solution_dump(n, gtime);
     }
@@ -151,9 +158,9 @@ void PostProcess(){
 
     final_solution_dump();
 
-    ComputeError(L1_norm, L2_norm);
+    //ComputeError(L1_norm, L2_norm);
 
-    error_dumping(L1_norm, L2_norm);
+    //serror_dumping(L1_norm, L2_norm);
 
     return;
 }
