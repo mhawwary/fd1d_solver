@@ -36,14 +36,14 @@ void initial_solution_dumping(){
 
     fclose(coord_out);
 
-    FILE* sol_out=fopen("./output/initial_sol.dat","w");
+    FILE* sol_out1=fopen("./output/initial_sol.dat","w");
 
     for(i=0;i<Nfaces;i++)
     {
-        fprintf(sol_out, "%2.10e %2.10e\n", X[i], Qn[i+Nghost_l]);
+        fprintf(sol_out1, "%2.10e %2.10e\n", X[i], Qn[i+Nghost_l]);
     }
 
-    fclose(sol_out);
+    fclose(sol_out1);
 
 
     return;
@@ -55,8 +55,6 @@ void final_solution_dump(){
 
     char *fname=nullptr;
     fname = new char[100];
-
-    //sprintf(fname,"./output/u_final_t%1.3f.dat",max_time);
 
     sprintf(fname,"./output/u_final.dat");
 

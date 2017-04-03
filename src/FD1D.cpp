@@ -90,9 +90,10 @@ void setsizes(){
         Nghost_r=2;
     }
 
-    Qn = new double[ Nfaces];
+    Netot = Nfaces + Nghost_l;
+    Qn = new double[ Netot ];
 
-    Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
+    //Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
 
     return;
 
@@ -151,9 +152,9 @@ void PostProcess(){
 
     final_solution_dump();
 
-    ComputeError(L1_norm, L2_norm);
+    //ComputeError(L1_norm, L2_norm);
 
-    error_dumping(L1_norm, L2_norm);
+    //error_dumping(L1_norm, L2_norm);
 
     return;
 }

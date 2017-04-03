@@ -147,6 +147,7 @@ void compute_residual(){
 
         Resid[i-Nghost_l] =  - temp / dx;
 
+
     }else if(scheme_order==2){
 
         temp=0.0;
@@ -161,6 +162,7 @@ void compute_residual(){
         temp += Qn[Nghost_l+1] *  FD_coeff[0];
 
         Resid[i-Nghost_l] =  - temp / dx;
+
     }else if(scheme_order==1){
 
         temp=0.0;
@@ -194,11 +196,6 @@ void update_ghost_sol(){
 
 //        Qn[i] = Qn[Nghost_l+1+i];
 //    }
-
-    for(=0; i<Nfaces; i++){
-
-
-    }
 
     return;
 }
