@@ -28,6 +28,7 @@ int main(int argc, char** argv){
 
     PostProcess();
 
+    cout << "Finished, start reseting variables"<<endl;
     Reset_vars();
 
     return 0;
@@ -119,7 +120,7 @@ void InitSim(char** argv){
 
         Qn[i] = Qinit[i];
 
-        _print(i,Qn[i]);
+        //_print(i,Qn[i]);
 
         //update_ghost_sol();
     }
