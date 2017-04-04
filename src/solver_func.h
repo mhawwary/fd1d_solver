@@ -4,11 +4,9 @@
 #include "general_tools.h"
 
 void setup_stencil();
-
+void init_solution();
 void ComputeOneStep();
-
 void compute_residual();
-
 void update_ghost_sol();
 
 void time_integrate();
@@ -17,10 +15,14 @@ void SSPRK22();
 void SSPRK33();
 void SSPRK44();
 
+void ComputeError(double &L1_norm_, double &L2_norm_);
+void Compute_exact_shifted_sol();
+
 
 
 //=======================================================================
-
+//  Space Solver functions
+//=======================================================================
 void setup_stencil(){
 
     if(scheme_order==1){      // first order upwind scheme
@@ -74,6 +76,22 @@ void setup_stencil(){
         FD_coeff [3] =  -2.0/3.0;
         FD_coeff [4] =   1.0/12.0;
     }
+
+    return;
+}
+
+void init_solution(){
+
+    register int i;
+
+    for( i=0; i<Nfaces; i++ ){
+
+        Qinit[i] = sin(2*PI*X[i]);
+
+        Qn[i+Nghost_l] = Qinit[i];
+    }
+
+    initial_solution_dumping();
 
     return;
 }
@@ -195,11 +213,6 @@ void update_ghost_sol(){
 //        Qn[i] = Qn[Nghost_l+1+i];
 //    }
 
-    for(=0; i<Nfaces; i++){
-
-
-    }
-
     return;
 }
 
@@ -216,8 +229,7 @@ void ComputeOneStep(){
 
 
 //=======================================================================
-
-
+// Time Integration Functions
 //=======================================================================
 
 void time_integrate(){
@@ -355,8 +367,7 @@ void SSPRK44(){
 
 
 //=====================================================================
-void ComputeError(double &L1_norm_, double &L2_norm_);
-void Compute_exact_shifted_sol();
+// Error computation functions
 //=====================================================================
 
 void Compute_exact_shifted_sol(){

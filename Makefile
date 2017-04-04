@@ -63,7 +63,7 @@ vpath %.h include src
 vpath %.hpp include src
 
 # Objects
-OBJS	= $(OBJ)FD1D.o  # objects 
+OBJS	= $(OBJ)FD1D.o $(OBJ)SimData.o # objects 
 INCLS	= 
 
 # Compile
@@ -86,7 +86,7 @@ $(OBJ)%.o : %.cpp
 
 
 $(OBJ)FD1DFlow.o:   FD1D.cpp 
-#$(OBJ)SimData.o:   SimData.hpp SimData.cpp
+$(OBJ)SimData.o:   SimData.hpp SimData.cpp
 #$(OBJ)general_tools.o:   general_tools.h general_tools.cpp
 #$(OBJ)GridData.o:   GridData.hpp GridData.cpp
 

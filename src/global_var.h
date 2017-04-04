@@ -1,6 +1,5 @@
 #pragma once
 
-
 const double PI=3.141592654;
 
 int n_sol_var=1;

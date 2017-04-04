@@ -1,15 +1,14 @@
 #include "general_tools.h"
 #include "global_var.h"
-//#include "space_solve.h"
-//#include "time_solve.h"
 #include "post_process.h"
 #include "solver_func.h"
 #include "grid.h"
+#include"SimData.hpp"
 
-
+void update_globalVar(SimData& simdata_);
 void read_input(char** argv_);
 void setsizes();
-void InitSim(char** argv);
+void InitSim(const int& argc, char** argv);
 void RunSim();
 void PostProcess();
 
@@ -21,7 +20,7 @@ int main(int argc, char** argv){
         cout << "ERROR: No inputs are specified ... " << endl; return(0);
     }
 
-    InitSim(argv);
+    InitSim(argc, argv);
 
     RunSim();
 
@@ -31,6 +30,8 @@ int main(int argc, char** argv){
 }
 
 void read_input(char** argv){
+
+
 
     // Sample prompt input:  Nelem Max_time cflno./dt AA
     Nelem = atof(argv[1]);      // Number of elements
@@ -90,17 +91,28 @@ void setsizes(){
         Nghost_r=2;
     }
 
-    Qn = new double[ Nfaces];
+    Netot = Nghost_l + Nfaces ;
+    Qn = new double[ Netot];
 
-    Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
+    //Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
 
     return;
 
 }
 
-void InitSim(char** argv){
+void InitSim(const int& argc,char** argv){
 
-    read_input(argv);
+
+    if(argc<6){  // Parsing through input file
+
+        SimData simdata_;
+
+        simdata_.Parse(argv[argc-1]);
+        update_globalVar(simdata_);
+
+    }else {
+        read_input(argv);
+    }
 
     setsizes();
 
@@ -108,16 +120,34 @@ void InitSim(char** argv){
 
     setup_stencil();
 
-    register int i;
+    init_solution();
 
-    for( i=0; i<Nfaces; i++ ){
+    return;
+}
 
-        Qinit[i] = sin(2*PI*X[i]);
+void update_globalVar(SimData& simdata_){
 
-        Qn[i+Nghost_l] = Qinit[i];
-    }
+    Nelem = simdata_.Nelem_;
 
-    initial_solution_dumping();
+    CFL= simdata_.CFL_;
+
+    dt = simdata_.dt_;
+
+    max_time = simdata_.maxtime_;
+
+    RK_order = simdata_.RK_order_;
+
+    scheme_order = simdata_.scheme_order_;
+
+    a_wave = simdata_.a_wave_;
+
+    // Screen Output of input and simulation parameters:
+    cout << "CFL no.:  "<<CFL<<"\tWave Speed:  "<<a_wave<<endl;
+    cout << "dt:  "<<dt<<"\t"<< "dx:  "<<dx<<endl;
+    cout << "required no. of time steps: "<<max_time/dt<<endl;
+    cout << "Number of Elements:  "<<Nelem<<endl;
+    cout << "Scheme Order: "<<scheme_order<<endl;
+    cout << "RK_order:  "<< RK_order << endl;
 
     return;
 }
@@ -151,9 +181,9 @@ void PostProcess(){
 
     final_solution_dump();
 
-    ComputeError(L1_norm, L2_norm);
+    //ComputeError(L1_norm, L2_norm);
 
-    error_dumping(L1_norm, L2_norm);
+    //error_dumping(L1_norm, L2_norm);
 
     return;
 }
