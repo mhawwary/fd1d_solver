@@ -11,7 +11,8 @@ void setsizes();
 void InitSim(const int& argc, char** argv);
 void RunSim();
 void PostProcess();
-
+void check_divergence(int& check_div_,const double& threshold, double& Q_max);
+void check_convergence(int& check_conv_, double& Q_sum);
 
 int main(int argc, char** argv){
 
@@ -91,10 +92,8 @@ void setsizes(){
         Nghost_r=2;
     }
 
-    Netot = Nghost_l + Nfaces ;
+    Netot = Nghost_l + Nfaces + Nghost_r ;
     Qn = new double[ Netot];
-
-    //Qtemp = new double [ Nghost_l + Nfaces + Nghost_r ];
 
     return;
 
@@ -141,13 +140,19 @@ void update_globalVar(SimData& simdata_){
 
     a_wave = simdata_.a_wave_;
 
+    Nfaces = Nelem + 1;
+    Ndof = Nelem;
+    dx=(xf-x0)/Nelem;
+    dt=dx*CFL/a_wave;
+
     // Screen Output of input and simulation parameters:
+    cout <<"\n===============================================\n";
     cout << "CFL no.:  "<<CFL<<"\tWave Speed:  "<<a_wave<<endl;
     cout << "dt:  "<<dt<<"\t"<< "dx:  "<<dx<<endl;
     cout << "required no. of time steps: "<<max_time/dt<<endl;
     cout << "Number of Elements:  "<<Nelem<<endl;
     cout << "Scheme Order: "<<scheme_order<<endl;
-    cout << "RK_order:  "<< RK_order << endl;
+    cout << "RK_order:  "<< RK_order << endl <<"\n";
 
     return;
 }
@@ -156,7 +161,11 @@ void RunSim(){
 
     int n=0;
 
+    int check_div_=0,check_conv_=0;
+
     gtime=0;
+
+    double growing_threshold=5,Q_max=5.0,Q_sum=0.0;
 
     while ( gtime <=fabs( max_time - pow(10,-10)) ){
 
@@ -164,30 +173,80 @@ void RunSim(){
 
         ComputeOneStep();
 
-        //intermediate_solution_dump(n, gtime);
+        check_divergence(check_div_, growing_threshold, Q_max);
+
+        //check_convergence(check_conv_, Q_min);
+
+        if((n%1000000)==0) cout << "Iter No.:  "<<n
+                                <<"\t Q_max:  "<<Q_max
+                                <<"\t Q_sum:  "<<Q_sum<<endl;
+
+        if(check_div_==1) {cout <<"++++++ Diverged +++++++\n\n"; break; }
+        if(check_conv_==1) {cout <<"++++++ Converged +++++++\n\n"; break; }
+
     }
 
-    cout << "\nNo. of Iterations:  "<<n<<endl;
-    cout << "\nActual time:  "<<max_time<<endl;
+    cout << "No. of Iterations:  "<<n<<endl;
+    cout << "Actual time:  "<<max_time<<endl;
+    cout <<"\n===============================================\n";
 
     return;
 }
-
 
 void PostProcess(){
 
     double L1_norm=0.0;
     double L2_norm=0.0;
 
+    Compute_exact_shifted_sol();
+
     final_solution_dump();
 
-    //ComputeError(L1_norm, L2_norm);
+    ComputeError(L1_norm, L2_norm);
+
+    _print(L1_norm,L2_norm);
+    cout <<"                         \n";
 
     //error_dumping(L1_norm, L2_norm);
 
     return;
 }
 
+
+void check_divergence(int& check_div_,const double& threshold, double& Q_max){
+
+    register int i;
+
+    Q_max = fabs(Qn[Nghost_l]);
+
+    for(i=Nghost_l+1; i<Nfaces; i++){
+
+        if(fabs(Qn[i]) > Q_max) Q_max = fabs(Qn[i]);
+    }
+
+    if(Q_max >= threshold) check_div_=1;
+
+    return;
+}
+
+
+void check_convergence(int& check_conv_, double& Q_sum){
+
+    register int i,j;
+
+    Q_sum = 0.0;
+
+    for(i=Nghost_l; i<Nfaces; i++){
+
+        Q_sum += fabs(Qn[i]);
+    }
+
+    if(Q_sum <= 1e-10) check_conv_=1;
+
+
+
+    return;
+}
 
 
 

@@ -21,7 +21,12 @@
 
 #include<cstring>
 
+#include <stdio.h>
+
 #include"../include/error.h"
+
+//#include"omp.h"
+//#include<mpi.h>
 
 using namespace std;
 

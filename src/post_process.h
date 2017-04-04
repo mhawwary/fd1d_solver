@@ -62,12 +62,27 @@ void final_solution_dump(){
 
     FILE* sol_out=fopen(fname,"w");
 
-    for(i=Nghost_l; i<Netot; i++)
+    for(i=Nghost_l; i<Nfaces+Nghost_l; i++)
     {
         fprintf(sol_out, "%2.10e\n", Qn[i]);
     }
 
     fclose(sol_out);
+
+    emptyarray(fname);
+
+    fname = new char[100];
+
+    sprintf(fname,"./output/u_exact.dat");
+
+    FILE* sol_out1=fopen(fname,"w");
+
+    for(i=0; i<Nfaces; i++)
+    {
+        fprintf(sol_out1, "%2.10e\n", Qex[i]);
+    }
+
+    fclose(sol_out1);
 
     emptyarray(fname);
 

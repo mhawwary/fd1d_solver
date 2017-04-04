@@ -1,5 +1,5 @@
 [Case]
- num_elements = 10
+ num_elements = 300
 
 [Simulation] 
  print_freq = 10
@@ -8,16 +8,20 @@
  wave_speed = 1;
 
 [space_solver]
- order = 1;
+  order = 3;
 
- #upwind_param=1; 
+#upwind_param=1; 
  
 [time_solver]
- CFL_no = 0.5
+ CFL_no = 0.875
+
  dt = 1e-5
  initial_time = 0
- final_time = 1
+
+ final_time = 7e5
+ 
  maximum_iteration = 1e6
 
  [./explicit]
+
   RK_order = 2
