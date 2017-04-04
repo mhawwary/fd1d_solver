@@ -104,94 +104,107 @@ void compute_residual(){
 
     double temp=0.0;
 
-    for(i=Nghost_l; i<Netot-1; i++){
+    for(i=0; i<Nfaces; i++){
 
-        temp=0.0;
+            temp=0.0;
 
-        for(j=0; j<scheme_order+1; j++){
+            for(j=0; j<scheme_order+1; j++){
 
-            s = stencil_index[j];
-            temp += Qn[i+s] * FD_coeff[j];
+                s = stencil_index[j];
+                temp += Qtemp[i+Nghost_l+s] * FD_coeff[j];
+            }
+
+            Resid[i] =  - temp / dx;
         }
 
-        Resid[i-Nghost_l] =  - temp / dx;
+//    for(i=Nghost_l; i<Netot-1; i++){
 
-        //Resid[i-Nghost_l] = - CFL *(Qn[i]-Qn[i-1]);
-    }
+//        temp=0.0;
 
-    if(scheme_order==4){
+//        for(j=0; j<scheme_order+1; j++){
 
-        temp=0.0;
-        i = Netot-1;
+//            s = stencil_index[j];
+//            temp += Qn[i+s] * FD_coeff[j];
+//        }
 
-        for(j=2; j<scheme_order+1; j++){
+//        Resid[i-Nghost_l] =  - temp / dx;
 
-            s = stencil_index[j];
-            temp += Qn[i+s] * FD_coeff[j];
-        }
+//        //Resid[i-Nghost_l] = - CFL *(Qn[i]-Qn[i-1]);
+//    }
 
-        temp += Qn[Nghost_l+2] *  FD_coeff[0];
-        temp += Qn[Nghost_l+1] *  FD_coeff[1];
+//    if(scheme_order==4){
 
-        Resid[i-Nghost_l] =  - temp / dx;
+//        temp=0.0;
+//        i = Netot-1;
 
-        temp=0.0;
+//        for(j=2; j<scheme_order+1; j++){
 
-        i=Netot-2;
+//            s = stencil_index[j];
+//            temp += Qn[i+s] * FD_coeff[j];
+//        }
 
-        for(j=1; j<scheme_order+1; j++){
+//        temp += Qn[Nghost_l+2] *  FD_coeff[0];
+//        temp += Qn[Nghost_l+1] *  FD_coeff[1];
 
-            s = stencil_index[j];
-            temp += Qn[i+s] * FD_coeff[j];
-        }
+//        Resid[i-Nghost_l] =  - temp / dx;
 
-        temp += Qn[Nghost_l+1] *  FD_coeff[0];
+//        temp=0.0;
 
-        Resid[i-Nghost_l] =  - temp / dx;
+//        i=Netot-2;
+
+//        for(j=1; j<scheme_order+1; j++){
+
+//            s = stencil_index[j];
+//            temp += Qn[i+s] * FD_coeff[j];
+//        }
+
+//        temp += Qn[Nghost_l+1] *  FD_coeff[0];
+
+//        Resid[i-Nghost_l] =  - temp / dx;
 
 
 
-    }else if(scheme_order==3){
-        temp=0.0;
-        i = Netot-1;
+//    }else if(scheme_order==3){
+//        temp=0.0;
+//        i = Netot-1;
 
-        for(j=1; j<scheme_order+1; j++){
+//        for(j=1; j<scheme_order+1; j++){
 
-            s = stencil_index[j];
-            temp += Qn[i+s] * FD_coeff[j];
-        }
+//            s = stencil_index[j];
+//            temp += Qn[i+s] * FD_coeff[j];
+//        }
 
-        temp += Qn[Nghost_l+1] *  FD_coeff[0];
+//        temp += Qn[Nghost_l+1] *  FD_coeff[0];
 
-        Resid[i-Nghost_l] =  - temp / dx;
+//        Resid[i-Nghost_l] =  - temp / dx;
 
-    }else if(scheme_order==2){
+//    }else if(scheme_order==2){
 
-        temp=0.0;
-        i = Netot-1;
+//        temp=0.0;
+//        i = Netot-1;
 
-        for(j=1; j<scheme_order+1; j++){
+//        for(j=1; j<scheme_order+1; j++){
 
-            s = stencil_index[j];
-            temp += Qn[i+s] * FD_coeff[j];
-        }
+//            s = stencil_index[j];
+//            temp += Qn[i+s] * FD_coeff[j];
+//        }
 
-        temp += Qn[Nghost_l+1] *  FD_coeff[0];
+//        temp += Qn[Nghost_l+1] *  FD_coeff[0];
 
-        Resid[i-Nghost_l] =  - temp / dx;
-    }else if(scheme_order==1){
+//        Resid[i-Nghost_l] =  - temp / dx;
+//    }else if(scheme_order==1){
 
-        temp=0.0;
-        i = Netot-1;
+//        temp=0.0;
+//        i = Netot-1;
 
-        for(j=0; j<scheme_order+1; j++){
+//        for(j=0; j<scheme_order+1; j++){
 
-            s = stencil_index[j];
-            temp += Qn[i+s] * FD_coeff[j];
-        }
+//            s = stencil_index[j];
+//            temp += Qn[i+s] * FD_coeff[j];
+//        }
 
-        Resid[i-Nghost_l] =  - temp / dx;
-    }
+//        Resid[i-Nghost_l] =  - temp / dx;
+//    }
 
     return;
 
@@ -201,17 +214,16 @@ void update_ghost_sol(){
 
     register int i;
 
-    for(i=0; i<Nghost_l; i++){
+    for(i=0; i<Nghost_l ; i++)
+        Qtemp[i] = Qn[Nfaces-1-Nghost_l+i];
 
-        Qn[i] = Qn[Netot-Nghost_l-1+i];
+    for(i=0; i<Nfaces; i++){
+
+        Qtemp[i+Nghost_l] = Qn[i];
     }
 
-    //Qn[0] = Qn[Netot-2];
-
-//    for(i=0; i<Nghost_r; i++){
-
-//        Qn[i] = Qn[Nghost_l+1+i];
-//    }
+    for(i=0; i<Nghost_r ; i++)
+        Qtemp[Nfaces+Nghost_l+i] = Qn[i+1];
 
     return;
 }
@@ -258,10 +270,13 @@ void fwdEuler(){
 
     register int i;
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = Qn[i] + dt * Resid[i-Nghost_l];
+        Qn[i] = Qn[i] + dt * Resid[i];
+
+        //_print(i,Qn[i]);
     }
+
 
     //Qn[Netot-1] = Qn[Nghost_l];
 
@@ -273,19 +288,17 @@ void SSPRK22(){
     register int i;
 
     double *q_temp=nullptr;
-    q_temp = new double[Netot];
+    q_temp = new double[Nfaces];
 
-    for(i=0;i<Netot;i++)  q_temp[i]=Qn[i];
+    for(i=0;i<Nfaces;i++)  q_temp[i]=Qn[i];
 
     // Step1:
     //-----------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = q_temp[i] + dt * Resid[i-Nghost_l];
+        Qn[i] = q_temp[i] + dt * Resid[i];
     }
-
-    //Qn[Netot-1] = Qn[Nghost_l];
 
     update_ghost_sol();
 
@@ -294,12 +307,10 @@ void SSPRK22(){
     // Step2:
     //------------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = 0.5 * ( q_temp[i] +  Qn[i] + dt * Resid[i-Nghost_l] );
+        Qn[i] = 0.5 * ( q_temp[i] +  Qn[i] + dt * Resid[i] );
     }
-
-    //Qn[Netot-1] = Qn[Nghost_l];
 
     emptyarray(q_temp);
 
@@ -311,18 +322,17 @@ void SSPRK33(){
     register int i;
 
     double *q_temp=nullptr;
-    q_temp = new double[Netot];
+    q_temp = new double[Nfaces];
 
-    for(i=0;i<Netot;i++)  q_temp[i]=Qn[i];
+    for(i=0;i<Nfaces;i++)  q_temp[i]=Qn[i];
 
     // Step1:
     //-----------
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = q_temp[i] + dt * Resid[i-Nghost_l];
+        Qn[i] = q_temp[i] + dt * Resid[i];
     }
 
-    //Qn[Netot-1] = Qn[Nghost_l];
 
     update_ghost_sol();
 
@@ -331,29 +341,23 @@ void SSPRK33(){
     // Step2:
     //------------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
-        Qn[i] = ( 0.75 *  q_temp[i] ) + 0.25 *( Qn[i] + dt * Resid[i-Nghost_l] ) ;
+        Qn[i] = ( 0.75 *  q_temp[i] ) + 0.25 *( Qn[i] + dt * Resid[i] ) ;
     }
-
-    //Qn[Netot-1] = Qn[Nghost_l];
 
     update_ghost_sol();
 
     compute_residual();
 
-    //for(i=0;i<Netot;i++)  q_temp[i]=Qn[i];
-
     // Step3:
     //--------------
 
-    for(i=Nghost_l; i<Netot; i++){
+    for(i=0; i<Nfaces; i++){
 
         Qn[i] = ( (1.0/3.0) *  q_temp[i] )
-                + (2.0/3.0) *( Qn[i] + dt * Resid[i-Nghost_l] ) ;
+                + (2.0/3.0) *( Qn[i] + dt * Resid[i] ) ;
     }
-
-    //Qn[Netot-1] = Qn[Nghost_l];
 
     emptyarray(q_temp);
 

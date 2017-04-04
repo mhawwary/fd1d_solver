@@ -7,12 +7,32 @@ void intermediate_solution_dump(const int& IterNo, const double& time_);
 void error_dumping(double& L1_norm_,double& L2_norm_);
 
 void initial_solution_dumping(void);
+void initial_ghost_sol_dump();
 void final_solution_dump(void);
 //void refined_mesh_dumping(void);
 
 
 //================================================================
 
+void initial_ghost_sol_dump(){
+
+    register int i;
+
+    char *fname=nullptr; fname =new char[100];
+
+    sprintf(fname, "./output/initial_ghost_sol_t%1.2e.dat",gtime);
+
+    FILE* sol_out=fopen(fname,"w");
+
+    for(i=0;i<Nfaces+Nghost_l+Nghost_r;i++)
+    {
+        fprintf(sol_out, "%2.10e\n", Qtemp[i]);
+    }
+
+    fclose(sol_out);
+
+    return;
+}
 
 void initial_solution_dumping(){
 
@@ -20,7 +40,7 @@ void initial_solution_dumping(){
 
     FILE* sol_out=fopen("./output/u_initial.dat","w");
 
-    for(i=Nghost_l;i<Nfaces+Nghost_l;i++)
+    for(i=0;i<Nfaces;i++)
     {
         fprintf(sol_out, "%2.10e\n", Qn[i]);
     }
@@ -53,8 +73,9 @@ void final_solution_dump(){
 
     register int i;
 
-    char *fname=nullptr;
+    char *fname=nullptr,*fname1=nullptr;
     fname = new char[100];
+    fname1 = new char[100];
 
     //sprintf(fname,"./output/u_final_t%1.3f.dat",max_time);
 
@@ -62,7 +83,7 @@ void final_solution_dump(){
 
     FILE* sol_out=fopen(fname,"w");
 
-    for(i=Nghost_l; i<Netot; i++)
+    for(i=0; i<Nfaces; i++)
     {
         fprintf(sol_out, "%2.10e\n", Qn[i]);
     }
@@ -70,6 +91,19 @@ void final_solution_dump(){
     fclose(sol_out);
 
     emptyarray(fname);
+
+    sprintf(fname1,"./output/u_ghost.dat");
+
+    FILE* sol_out1=fopen(fname1,"w");
+
+    for(i=0; i<Nfaces+Nghost_l+Nghost_r; i++)
+    {
+        fprintf(sol_out1, "%2.10e\n", Qtemp[i]);
+    }
+
+    fclose(sol_out1);
+
+    emptyarray(fname1);
 
 
     return;
