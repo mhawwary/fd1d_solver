@@ -22,6 +22,14 @@ pyplot.xlabel('x');
 pyplot.ylabel('u');
 #pyplot.title('comparison of all solutions');
 
+#pyplot.figure();
+
+#pyplot.plot(x,u_comp,'-or',label='Numerical sol');
+#pyplot.grid();
+#pyplot.tight_layout();
+#pyplot.legend();
+#pyplot.xlabel('x');
+#pyplot.ylabel('u');
 
 pyplot.show()
 

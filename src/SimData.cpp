@@ -10,6 +10,7 @@ void SimData::Parse(const std::string &fname){
     print_freq_=gp_input("Simulation/print_freq",0);
 
     scheme_order_=gp_input("space_solver/order",1);
+    upwind_biased_=gp_input("space_solver/upwind_biased",1);
 
     RK_order_=gp_input("time_solver/explicit/RK_order",0);
 

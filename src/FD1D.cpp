@@ -11,7 +11,7 @@ void setsizes();
 void InitSim(const int& argc, char** argv);
 void RunSim();
 void PostProcess();
-void check_divergence(int& check_div_,const double& threshold, double& Q_max);
+void check_divergence(int& check_div_,int& check_conv_,const double& threshold, double& Q_max);
 void check_convergence(int& check_conv_, double& Q_sum);
 
 int main(int argc, char** argv){
@@ -31,8 +31,6 @@ int main(int argc, char** argv){
 }
 
 void read_input(char** argv){
-
-
 
     // Sample prompt input:  Nelem Max_time cflno./dt AA
     Nelem = atof(argv[1]);      // Number of elements
@@ -138,6 +136,8 @@ void update_globalVar(SimData& simdata_){
 
     scheme_order = simdata_.scheme_order_;
 
+    upwind_biased = simdata_.upwind_biased_;
+
     a_wave = simdata_.a_wave_;
 
     Nfaces = Nelem + 1;
@@ -165,7 +165,7 @@ void RunSim(){
 
     gtime=0;
 
-    double growing_threshold=5,Q_max=5.0,Q_sum=0.0;
+    double growing_threshold=10.0,Q_max=20.0,Q_sum=0.0;
 
     while ( gtime <=fabs( max_time - pow(10,-10)) ){
 
@@ -173,16 +173,16 @@ void RunSim(){
 
         ComputeOneStep();
 
-        check_divergence(check_div_, growing_threshold, Q_max);
+        check_divergence(check_div_, check_conv_, growing_threshold, Q_max);
 
-        //check_convergence(check_conv_, Q_min);
+        //check_convergence(check_conv_, Q_sum);
 
         if((n%1000000)==0) cout << "Iter No.:  "<<n
                                 <<"\t Q_max:  "<<Q_max
                                 <<"\t Q_sum:  "<<Q_sum<<endl;
 
-        if(check_div_==1) {cout <<"++++++ Diverged +++++++\n\n"; break; }
-        if(check_conv_==1) {cout <<"++++++ Converged +++++++\n\n"; break; }
+        if(check_div_ ==1) { cout <<"++++++ Diverged +++++++\tQ_max:  "<<Q_max<<"\n\n";  break; }
+        if(check_conv_==1) { cout <<"++++++ Converged +++++++\tQ_max:  "<<Q_max<<"\n\n"; break; }
 
     }
 
@@ -213,7 +213,7 @@ void PostProcess(){
 }
 
 
-void check_divergence(int& check_div_,const double& threshold, double& Q_max){
+void check_divergence(int& check_div_, int& check_conv_,const double& threshold, double& Q_max){
 
     register int i;
 
@@ -225,6 +225,7 @@ void check_divergence(int& check_div_,const double& threshold, double& Q_max){
     }
 
     if(Q_max >= threshold) check_div_=1;
+    if(Q_max <= 1e-4) check_conv_=1;
 
     return;
 }
@@ -238,11 +239,10 @@ void check_convergence(int& check_conv_, double& Q_sum){
 
     for(i=Nghost_l; i<Nfaces; i++){
 
-        Q_sum += fabs(Qn[i]);
+        Q_sum+= fabs(Qn[i]);
     }
 
     if(Q_sum <= 1e-10) check_conv_=1;
-
 
 
     return;

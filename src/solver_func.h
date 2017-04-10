@@ -45,22 +45,31 @@ void setup_stencil(){
 
     }else if (scheme_order==3){
 
-        // for 3rd order fully upwind:
-        //stencil_index[0] =  0;
-        //stencil_index[1] = -1;
-        //stencil_index[2] = -2;
-        //stencil_index[3] = -3;  // [j,j-1,j-2,j-3];
+        if(upwind_biased==0) {  //for 3rd order fully upwind:
+            stencil_index[0] =  0;
+            stencil_index[1] = -1;
+            stencil_index[2] = -2;
+            stencil_index[3] = -3;  // [j,j-1,j-2,j-3];
 
-        // for 3rd order biased upwind:
-        stencil_index[0] =  1;
-        stencil_index[1] =  0;
-        stencil_index[2] = -1;
-        stencil_index[3] = -2;  //[j+1,j,j-1,j-2];
+            FD_coeff [0] =  11.0/6.0;
+            FD_coeff [1] =  -3.0;
+            FD_coeff [2] =   3.0/2.0;
+            FD_coeff [3] =  -1.0/3.0;
 
-        FD_coeff [0] =  1.0/3.0;
-        FD_coeff [1] =  0.5;
-        FD_coeff [2] = -1.0;
-        FD_coeff [3] =  1.0/6.0;
+        }else if(upwind_biased==1){ // for 3rd order upwind biased :
+            stencil_index[0] =  1;
+            stencil_index[1] =  0;
+            stencil_index[2] = -1;
+            stencil_index[3] = -2;  //[j+1,j,j-1,j-2];
+
+            FD_coeff [0] =  1.0/3.0;
+            FD_coeff [1] =  0.5;
+            FD_coeff [2] = -1.0;
+            FD_coeff [3] =  1.0/6.0;
+
+        }else{
+            FatalError("Wrong upwind biased parameter for 3rd order scheme");
+        }
 
     }else if (scheme_order==4){ // 4th order central scheme
 

@@ -1,5 +1,5 @@
 [Case]
- num_elements = 300
+ num_elements = 10
 
 [Simulation] 
  print_freq = 10
@@ -9,19 +9,18 @@
 
 [space_solver]
   order = 3;
-
-#upwind_param=1; 
+  upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme
  
 [time_solver]
- CFL_no = 0.875
+ CFL_no = 0.01
 
  dt = 1e-5
  initial_time = 0
 
- final_time = 7e5
+ final_time = 5.0
  
  maximum_iteration = 1e6
 
  [./explicit]
 
-  RK_order = 2
+  RK_order = 3

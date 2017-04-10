@@ -17,6 +17,8 @@ struct SimData {
 
     int  Nelem_ = 1;  // no. of elements in the grid
 
+    int upwind_biased_=1;
+
     //std::string case_title;
 
     //std::string upwind_type_;

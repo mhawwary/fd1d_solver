@@ -14,6 +14,7 @@ int RK_order=1;
 int scheme_order=1;  // scheme order
 int *stencil_index=nullptr;
 double *FD_coeff=nullptr;
+int upwind_biased=1;
 
 double gtime=0;
 double t_init;
