@@ -8,7 +8,10 @@ void error_dumping(double& L1_norm_,double& L2_norm_);
 
 void initial_solution_dumping(void);
 void final_solution_dump(void);
-//void refined_mesh_dumping(void);
+
+void BinaryDataReading();
+void BinaryDataWriting(const int& IterNo_);
+void copy_sol_(double* Qn, double* Qn_temp1_);
 
 
 //================================================================
@@ -110,6 +113,73 @@ void error_dumping(double &L1_norm_, double &L2_norm_){
     fclose(error_out);
 
     emptyarray(error_fname);
+
+    return;
+}
+
+void BinaryDataReading(){
+
+    char *cfname=nullptr;  cfname=new char[200];
+
+    sprintf(cfname,"./output/BINARY/u_binary_iter(%d).dat",restart_iter_);
+
+    FILE*  bsol_read=fopen(cfname,"rb");
+
+    fread(&Nelem,sizeof(int),1,bsol_read);
+    fread(&scheme_order,sizeof(int),1,bsol_read);
+    fread(&RK_order,sizeof(int),1,bsol_read);
+    fread(&CFL,sizeof(double),1,bsol_read);
+
+    fread(Qinit, sizeof(double),Nfaces,bsol_read);
+
+    dx=(xf-x0)/Nelem;
+    dt=dx*CFL/a_wave;
+
+    t_init = dt * restart_iter_;
+
+    fclose(bsol_read);
+
+    emptyarray(cfname);
+
+    return;
+}
+
+void BinaryDataWriting(const int& IterNo_){
+
+    char *cfname=nullptr;  cfname=new char[200];
+
+    sprintf(cfname,"./output/BINARY/u_binary_iter(%d).dat",IterNo_);
+
+
+    FILE*  bsol_write=fopen(cfname,"wb");
+
+    fwrite(&Nelem,sizeof(int),1,bsol_write);
+    fwrite(&scheme_order,sizeof(int),1,bsol_write);
+    fwrite(&RK_order,sizeof(int),1,bsol_write);
+    fwrite(&CFL,sizeof(double),1,bsol_write);
+
+    double* Qn_temp1_=nullptr;
+
+    Qn_temp1_ = new double[Nfaces];
+
+    copy_sol_(Qn, Qn_temp1_);
+
+    fwrite(Qn_temp1_, sizeof(double),Nfaces,bsol_write);
+
+    fclose(bsol_write);
+
+    emptyarray(cfname);
+    emptyarray(Qn_temp1_);
+
+    return;
+}
+
+void copy_sol_(double* Qn, double* Qn_temp1_){
+
+    register int i;
+
+    for(i=0; i<Nfaces; i++)  Qn_temp1_[i] = Qn[i+Nghost_l];
+
 
     return;
 }

@@ -5,6 +5,7 @@
 
 void setup_stencil();
 void init_solution();
+void init_sol_fromFile();
 void ComputeOneStep();
 void compute_residual();
 void update_ghost_sol();
@@ -105,6 +106,21 @@ void init_solution(){
     return;
 }
 
+void init_sol_fromFile(){
+
+    register int i;
+
+    for( i=0; i<Nfaces; i++ ){
+
+        Qn[i+Nghost_l] = Qinit[i];
+    }
+
+    initial_solution_dumping();
+
+
+    return;
+}
+
 void compute_residual(){
 
     register int i,j;
@@ -123,7 +139,16 @@ void compute_residual(){
             temp += Qn[i+Nghost_l+s] * FD_coeff[j];
         }
 
-        Resid[i] =  - temp / dx;
+        if(scheme_order==2){
+
+            Resid[i] = - 0.5*II*(Qn[i+Nghost_l+1] - Qn[i+Nghost_l-1]);
+
+
+        }else {
+
+        //Resid[i] =  - temp / dx;
+            Resid[i] = -temp*II;
+        }
     }
 
 
@@ -235,13 +260,6 @@ void update_ghost_sol(){
 
         Qn[i+Nghost_l+Nfaces] = Qn[i+Nghost_l+1];
     }
-
-    //Qn[0] = Qn[Netot-2];
-
-//    for(i=0; i<Nghost_r; i++){
-
-//        Qn[i] = Qn[Nghost_l+1+i];
-//    }
 
     return;
 }

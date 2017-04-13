@@ -21,5 +21,7 @@ void generate_grid(){
         h_j[i]= X[i+1]-X[i];
     }
 
+    II=1./dx;
+
     return;
 }

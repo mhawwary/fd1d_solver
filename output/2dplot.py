@@ -13,23 +13,31 @@ u_exact = numpy.loadtxt('u_exact.dat');
 
 pyplot.figure();
 
-pyplot.plot(x,u_init,'--b',label='Initial sol');
-pyplot.plot(x,u_comp,'-or',label='Numerical sol');
 pyplot.plot(x,u_exact,'--k',label='Exact sol');
+pyplot.plot(x,u_comp,'-or',label='Numerical sol');
 pyplot.grid();
 pyplot.legend();
 pyplot.xlabel('x');
 pyplot.ylabel('u');
-#pyplot.title('comparison of all solutions');
 
-#pyplot.figure();
+pyplot.figure();
 
-#pyplot.plot(x,u_comp,'-or',label='Numerical sol');
-#pyplot.grid();
-#pyplot.tight_layout();
-#pyplot.legend();
-#pyplot.xlabel('x');
-#pyplot.ylabel('u');
+pyplot.plot(x,u_init,'-sb',label='Initial sol');
+pyplot.plot(x,u_comp,'-or',label='Numerical sol');
+
+pyplot.grid();
+pyplot.legend();
+pyplot.xlabel('x');
+pyplot.ylabel('u');
+
+pyplot.figure();
+
+pyplot.plot(x,u_comp,'-or',label='Numerical sol');
+pyplot.grid();
+pyplot.tight_layout();
+pyplot.legend();
+pyplot.xlabel('x');
+pyplot.ylabel('u');
 
 pyplot.show()
 

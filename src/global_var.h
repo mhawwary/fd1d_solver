@@ -1,6 +1,6 @@
 #pragma once
 
-const double PI=3.141592654;
+const double PI=3.1415926535897932384626433832795029L;
 
 int n_sol_var=1;
 int Nelem=40;
@@ -22,10 +22,15 @@ double dt=1e-2;
 double t_end;
 double max_time=1.0;
 double CFL;
+unsigned int iter_init = 0;
+int max_iter_flag=1;
+unsigned int max_iter_=1e6;
+int restart_iter_=0;
 
 double x0=0.0;
 double dx=1.0;
 double xf=1.0;
+double II=1./dx;
 
 double a_wave=1.0;
 double u_max = 1.0;
@@ -42,4 +47,7 @@ double *Qtemp=nullptr;
 double *Qex=nullptr;
 
 double *Resid=nullptr;
+
+double conv_tol_=0;
+double div_thresh_=10;
 

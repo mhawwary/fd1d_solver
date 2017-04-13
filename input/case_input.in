@@ -1,25 +1,31 @@
 [Case]
- num_elements = 10
+ num_elements = 20
+ restart_flag = 0
+ restart_iter = 158e6
 
 [Simulation] 
  print_freq = 10
+ convergence_tolerance = 1e-16
+ divergence_threshold = 20  
 
 [wave]
  wave_speed = 1;
 
 [space_solver]
-  order = 3;
+  order = 2;
   upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme
  
 [time_solver]
- CFL_no = 0.01
+ CFL_no = 1.0
 
  dt = 1e-5
  initial_time = 0
 
- final_time = 5.0
+ final_time = 6e5
  
- maximum_iteration = 1e6
+ maximum_iteration = 1e7
+
+ max_iter_flag = 1 # use max_iter as a stopping criteria if not converged or diverged
 
  [./explicit]
 
