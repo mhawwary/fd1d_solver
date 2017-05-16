@@ -5,21 +5,19 @@
 #include"FDSolver.hpp"
 #include"ExplicitTimeSolver.hpp"
 
-//void read_input(char** argv_);
-//void setsizes();
 void InitSim(const int& argc, char** argv);
 void RunSim();
 void PostProcess();
 void check_divergence(int& check_div_,int& check_conv_
                       ,const double& threshold, const double& conv_tol
-                      , double& Q_max, double& Q_sum);
+                      , double** Qn_, double& Q_max, double& Q_sum);
 
 void check_convergence(int& check_conv_, double& Q_sum);
 
 void logo();
 
-GridData *meshdata;
 SimData   simdata;
+GridData *meshdata;
 FDSolver *fd_solver;
 ExplicitTimeSolver *time_solver;
 
@@ -37,7 +35,7 @@ int main(int argc, char** argv){
 
     RunSim();
 
-    //PostProcess();
+    PostProcess();
 
     emptypointer(meshdata);
     emptypointer(fd_solver);
@@ -45,73 +43,6 @@ int main(int argc, char** argv){
 
     return 0;
 }
-
-//void read_input(char** argv){
-
-//    // Sample prompt input:  Nelem Max_time cflno./dt AA
-//    Nelem = atof(argv[1]);      // Number of elements
-//    max_time = atof(argv[2]);   // Max time for end of simulation
-//    CFL = atof(argv[3]);      // CFL number
-//    //dt = atof(argv[3]);       // time step
-//    a_wave    = atof(argv[4]);      // Wave speed
-//    scheme_order = atof(argv[5]); // scheme order
-//    RK_order = atof(argv[6]); // RK order
-
-//    Nfaces = Nelem + 1;
-//    Ndof = Nelem;
-//    dx=(xf-x0)/Nelem;
-//    dt=dx*CFL/a_wave;
-//    //sigma = AA*dt/dx;
-
-//    // Screen Output of input and simulation parameters:
-//    cout << "CFL no.:  "<<CFL<<"\tWave Speed:  "<<a_wave<<endl;
-//    cout << "dt:  "<<dt<<"\t"<< "dx:  "<<dx<<endl;
-//    cout << "required no. of time steps: "<<max_time/dt<<endl;
-//    cout << "Number of Elements:  "<<Nelem<<endl;
-//    cout << "Scheme Order: "<<scheme_order<<endl;
-//    cout << "RK_order:  "<< RK_order << endl;
-
-//    return;
-//}
-
-//void setsizes(){
-
-//    X     = new double[Nfaces];
-
-//    h_j = new double[Nelem];
-//    local_cfl = new double[Nelem];
-
-//    Qinit  = new double[Nfaces];
-//    Qex = new double[Nfaces];
-
-//    Resid = new double [Nfaces];
-
-//    stencil_index = new int[scheme_order+1];
-//    FD_coeff = new double [scheme_order+1];
-
-//    if(scheme_order==1){
-//        Nghost_l = 1;
-//        Nghost_r=0;
-
-//    }else if(scheme_order==2){
-//        Nghost_l=1;
-//        Nghost_r=1;
-
-//    }else if(scheme_order==3){
-//        Nghost_l=2;
-//        Nghost_r=1;
-
-//    }else if(scheme_order==4){
-//        Nghost_l=2;
-//        Nghost_r=2;
-//    }
-
-//    Netot = Nghost_l + Nfaces + Nghost_r ;
-//    Qn = new double[ Netot];
-
-//    return;
-
-//}
 
 void InitSim(const int& argc,char** argv){
 
@@ -133,10 +64,6 @@ void InitSim(const int& argc,char** argv){
         fd_solver->setup_solver(meshdata,simdata);
 
         fd_solver->InitSol();
-
-        fd_solver->print_cont_vertex_sol();
-        double L2_error =fd_solver->ComputeSolNodalError();
-        fd_solver->dump_errors(L2_error);
 
         time_solver = new ExplicitTimeSolver;
 
@@ -169,13 +96,14 @@ void InitSim(const int& argc,char** argv){
 
 void RunSim(){
 
+//    int check_div_=0,check_conv_=0;
+//    double Q_max=20.0,Q_sum=0.0;
+
     time_solver->setupTimeSolver(fd_solver,&simdata);
 
     double gtime = fd_solver->GetPhyTime();
 
     double dt_= fd_solver->GetTimeStep();
-
-    //printf("Address of Qn before sending to timesolver: %d\n",fd_solver->GetNumSolution());
 
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());
 
@@ -192,116 +120,60 @@ void RunSim(){
             time_solver->space_solver->UpdatePhyTime(dt_);
 
             gtime=fd_solver->GetPhyTime();
+
+//            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
+//                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
+
+//            if(time_solver->GetIter()%300000==0){
+//                cout << "Iter No.:  "<<time_solver->GetIter()
+//                     <<"\t Q_max:  "<<Q_max
+//                    <<"\t Q_sum:  "<<Q_sum<<endl;
+//            }
     }
-
-//    unsigned int n=iter_init;
-
-//    int check_div_=0,check_conv_=0;
-
-//    gtime=t_init;
-
-//    double Q_max=20.0,Q_sum=0.0;
-
-//    if(max_iter_flag==0){
-
-//        while ( gtime <=fabs( max_time - pow(10,-10)) ){
-
-//            gtime += dt;  n++;
-
-//            ComputeOneStep();
-
-//            check_divergence(check_div_, check_conv_, div_thresh_, conv_tol_, Q_max, Q_sum);
-
-//            //check_convergence(check_conv_, Q_sum);
-
-//            if((n%1000000)==0) {
-
-//                cout << "Iter No.:  "<<n
-//                     <<"\t Q_max:  "<<Q_max
-//                    <<"\t Q_sum:  "<<Q_sum<<endl;
-
-//                BinaryDataWriting(n);
-//            }
-
-//            if(check_div_ ==1) { cout <<"++++++ Diverged +++++++\tQ_max:  "<<Q_max<<"\n\n";  break; }
-//            if(check_conv_==1) { cout <<"++++++ Converged +++++++\tQ_max:  "<<Q_max<<"\n\n"; break; }
-
-//        }
-
-//    }else {
-
-//        while ( n < ( max_iter_ + restart_iter_)  ){
-
-//            gtime += dt;  n++;
-
-//            ComputeOneStep();
-
-//            check_divergence(check_div_, check_conv_, div_thresh_, conv_tol_, Q_max, Q_sum);
-
-//            //check_convergence(check_conv_, Q_sum);
-
-//            if((n%1000000)==0) {
-
-//                cout << "Iter No.:  "<<n
-//                     <<"\t Q_max:  "<<Q_max
-//                    <<"\t Q_sum:  "<<Q_sum<<endl;
-
-//                BinaryDataWriting(n);
-//            }
-
-//            if(check_div_ ==1) { cout <<"++++++ Diverged +++++++\tQ_max:  "<<Q_max<<"\n\n";  break; }
-//            if(check_conv_==1) { cout <<"++++++ Converged +++++++\tQ_max:  "<<Q_max<<"\n\n"; break; }
-
-//        }
-
-//    }
-
-
-
-//    cout << "No. of Iterations:  "<<n<<endl;
-//    cout << "Actual time:  "<<max_time<<endl;
-//    cout <<"\n===============================================\n";
 
     return;
 }
 
 void PostProcess(){
 
-//    double L1_norm=0.0;
-//    double L2_norm=0.0;
+    double L2_norm_error=fd_solver->ComputeSolNodalError();
 
-//    Compute_exact_shifted_sol();
+    fd_solver->print_cont_vertex_sol();
 
-//    final_solution_dump();
+    fd_solver->dump_errors(L2_norm_error);
 
-//    ComputeError(L1_norm, L2_norm);
-
-//    //error_dumping(L1_norm, L2_norm);
-
-    return;
-}
-
-
-void check_divergence(int& check_div_, int& check_conv_,const double& threshold, const double& conv_thresh, double& Q_max, double& Q_sum){
-
-//    register int i;
-
-//    Q_max = fabs(Qn[Nghost_l]);
-//    Q_sum = fabs(Qn[Nghost_l]);
-
-//    for(i=Nghost_l+1; i<Nfaces; i++){
-
-//        if(fabs(Qn[i]) > Q_max) Q_max = fabs(Qn[i]);
-
-//        Q_sum+= fabs(Qn[i]);
-//    }
-
-//    if(Q_max >= threshold) check_div_=1;
-//    if(Q_max <= conv_thresh) check_conv_=1;
+    printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
+    printf("Final time is: %1.2f\n",fd_solver->GetPhyTime());
+    printf("nodal_L2_Error: %e\n\n",L2_norm_error);
 
     return;
 }
 
+
+void check_divergence(int& check_div_, int& check_conv_,const double& threshold
+                      , const double& conv_thresh,double** Qn_
+                      , double& Q_max, double& Q_sum){
+
+    register int i;
+
+    int Nghost_l = fd_solver->GetNghost_l();
+    int Nfaces = fd_solver->GetNfaces();
+
+    Q_max = fabs(Qn_[Nghost_l][0]);
+    Q_sum = fabs(Qn_[Nghost_l][0]);
+
+    for(i=Nghost_l+1; i<Nfaces; i++){
+
+        if(fabs(Qn_[i][0]) > Q_max) Q_max = fabs(Qn_[i][0]);
+
+        Q_sum+= fabs(Qn_[i][0]);
+    }
+
+    if(Q_max >= threshold) check_div_=1;
+    if(Q_max <= conv_thresh) check_conv_=1;
+
+    return;
+}
 
 void check_convergence(int& check_conv_, double& Q_sum){
 

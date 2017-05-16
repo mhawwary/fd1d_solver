@@ -299,17 +299,29 @@ void FDSolver::Compute_exact_vertex_sol(){
     double xx=0.0;
     double x0,x1;
 
-    for(j=0; j<grid_->N_exact_ppts; j++){
+    if(simdata_->wave_form_==1){
 
-        xx = grid_->x_exact_ppts[j]- exact_sol_shift;
+        for(j=0; j<grid_->N_exact_ppts; j++){
 
-        x0 = xx - wave_length_*floor(xx/wave_length_);
-        x1 = xx + wave_length_*floor(xx/-wave_length_);
+            xx = grid_->x_exact_ppts[j]- exact_sol_shift;
 
-        if(x0==0 && x1==0)
-            Q_exact[j][0] = 0.5*(eval_init_sol(x0)+ eval_init_sol(x1));
-        else
-            Q_exact[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
+            x0 = xx - wave_length_*floor(xx/wave_length_);
+            x1 = xx + wave_length_*floor(xx/-wave_length_);
+
+            if(x0==0 && x1==0)
+                Q_exact[j][0] = 0.5*(eval_init_sol(x0)+ eval_init_sol(x1));
+            else
+                Q_exact[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
+        }
+
+    }else if(simdata_->wave_form_==0){
+
+       for(j=0; j<grid_->N_exact_ppts; j++){
+
+            xx = grid_->x_exact_ppts[j]- exact_sol_shift;
+            Q_exact[j][0] = eval_init_sol(xx);
+       }
+
     }
 
     return;
@@ -350,7 +362,7 @@ void FDSolver::print_cont_vertex_sol(){
     char *fname=nullptr;
     fname = new char[200];
 
-    sprintf(fname,"%snodal/u_nodal_N%d_CFL%1.2f_%1.1fT.dat"
+    sprintf(fname,"%snodal/u_comp_N%d_CFL%1.3f_%1.1fT.dat"
             ,simdata_->case_postproc_dir, simdata_->Nelem_
             ,simdata_->CFL_
             ,simdata_->Nperiods);
@@ -366,7 +378,7 @@ void FDSolver::print_cont_vertex_sol(){
 
     fname = new char[200];
 
-    sprintf(fname,"%snodal/u_nodal_exact_N%d_CFL%1.2f_%1.1fT.dat"
+    sprintf(fname,"%snodal/u_exact_N%d_CFL%1.3f_%1.1fT.dat"
             ,simdata_->case_postproc_dir,simdata_->Nelem_
             ,simdata_->CFL_
             ,simdata_->Nperiods);
@@ -389,7 +401,7 @@ void FDSolver::dump_errors(double &L2_error_){
     char *fname=nullptr;
     fname = new char[200];
 
-    sprintf(fname,"%serrors/sol_errors_CFL%1.2f_%1.1fT.dat"
+    sprintf(fname,"%serrors/sol_errors_CFL%1.3f_%1.1fT.dat"
             ,simdata_->case_postproc_dir
             ,simdata_->CFL_
             ,simdata_->Nperiods);

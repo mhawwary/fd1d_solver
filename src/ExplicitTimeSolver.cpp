@@ -126,12 +126,12 @@ void ExplicitTimeSolver::CopyOldResid(double **resid_t_, double **old_resid_){
 
 void ExplicitTimeSolver::FwdEuler(double **q_){
 
-    register int i;
-    int j;
+    register int j;
+    int k;
 
-    for(i=0; i<Nfaces; i++)
-        for(j=0; j<Ndof; j++)
-            q_[i][j] = q_[i][j] + dt_ * resid[i][j];
+    for(j=0; j<Nfaces; j++)
+        for(k=0; k<Ndof; k++)
+            q_[j+Nghost_l][k] = q_[j+Nghost_l][k] + dt_ * resid[j][k];
 
     space_solver->UpdateResid(resid,q_);
 
