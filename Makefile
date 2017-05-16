@@ -3,7 +3,7 @@
 
 COMP	= GCC
 TECIO	= NO
-CODE	= RELEASE
+CODE	= DEBUG
 OPENMP	= NO
 
 # Specifing Standard Variables:
@@ -63,7 +63,7 @@ vpath %.h include src
 vpath %.hpp include src
 
 # Objects
-OBJS	= $(OBJ)FD1D.o $(OBJ)SimData.o # objects 
+OBJS	= $(OBJ)GridData.o $(OBJ)FD1D.o $(OBJ)SimData.o $(OBJ)FDSolver.o $(OBJ)ExplicitTimeSolver.o # objects 
 INCLS	= 
 
 # Compile
@@ -84,11 +84,14 @@ FD1DFlow.exe: $(OBJS)
 $(OBJ)%.o : %.cpp 
 	$(CXX) $(OPTS) -c -o $@ $<
 
+$(OBJ)%.o : %.c 
+	$(CXX) $(OPTS) -c -o $@ $<
 
 $(OBJ)FD1DFlow.o:   FD1D.cpp 
-$(OBJ)SimData.o:   SimData.hpp SimData.cpp
-#$(OBJ)general_tools.o:   general_tools.h general_tools.cpp
-#$(OBJ)GridData.o:   GridData.hpp GridData.cpp
+$(OBJ)SimData.o:   SimData.cpp
+$(OBJ)GridData.o:   GridData.c 
+$(OBJ)FDSolver.o: FDSolver.cpp
+$(OBJ)ExplicitTimeSolver.o: ExplicitTimeSolver.cpp
 
 clean:
 	rm -f ./$(OBJ)*.o ./$(BIN)*.exe 

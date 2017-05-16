@@ -1,37 +1,47 @@
+#ifndef SIMDATA_H
+#define SIMDATA_H
+
 #include"../include/getpot.h"
+#include"general_tools.h"
 
 
 struct SimData {
 
-    int restart_flag =0;  //0: start a new simulation; 1: restart a previous simulation
-    unsigned int restart_iter_=100;
-    int scheme_order_=0;    // FD Scheme order
-    int RK_order_=0;        // Runge-Kutta type (0: euler FT, 2: SSPRK22, 3: SSPRK33)
+    int  Nelem_ = 1;  // no. of elements in the grid
+    double x0_=0.0;
+    double xf_=1.0;
+    int uniform_=1;  // flag for uniform/nonunifrom grids, 1: uniform
+    int refine_level_=0; // 0: no refinement
 
     int print_freq_=10;
     double conv_tol_=1e-15;
     double div_thresh_ = 20;
+    int restart_flag =0;  //0: start a new simulation; 1: restart a previous simulation
+    unsigned int restart_iter_=100;
+    std::string Sim_mode;
 
-    double dt_ = 1e-3;  // dt time step
-    double t_init_ = 0;  // initial time
-    double maxtime_ =1e20;  // end time
-    unsigned int maxIter_ = 1e6; // maximum number of iterations
-    int max_iter_flag_=1;
-    double CFL_    = 1.0;   // CFL no.
     double a_wave_=2;
+    int wave_form_ = 0;  // 0: sine wave, 1: Gaussian wave
+    double Gaussian_exponent_ = -40; // u(x) = exp(-38.6 *x^2)
 
-    int  Nelem_ = 1;  // no. of elements in the grid
-
+    int scheme_order_=0;    // FD Scheme order
+    int RK_order_=0;        // Runge-Kutta type (0: euler FT, 2: SSPRK22, 3: SSPRK33)
     int upwind_biased_=1;
 
-    //std::string case_title;
+    int calc_dt_flag=1; // 1: specify CFL and calc dt, 0: specify dt and calc CFL
+    double CFL_    = 1.0;   // CFL no.
+    double dt_ = 1e-3;  // dt time step
+    double t_init_ = 0;  // initial time
+    double t_end_ =1e20;  // end time
+    unsigned int maxIter_ = 1e6; // maximum number of iterations
+    double Nperiods = 1.0; // no. of periods for simulation
+    int end_of_sim_flag_=0;  // 1: use max_iteration as a stopping criteria if not converged or diverged
 
-    //std::string upwind_type_;
-
-    //std::string mesh_fname;   // mesh file name
-
-    //std::string case_postproc_dir;  // postprocessing directory
+    char* case_postproc_dir=nullptr;  // postprocessing directory
 
     void Parse(const std::string &fname);
 
+    void setup_output_directory();
 };
+
+#endif
