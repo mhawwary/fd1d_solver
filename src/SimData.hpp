@@ -42,6 +42,8 @@ struct SimData {
     void Parse(const std::string &fname);
 
     void setup_output_directory();
+
+    void dump_python_inputfile();
 };
 
 #endif

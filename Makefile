@@ -95,6 +95,12 @@ $(OBJ)ExplicitTimeSolver.o: ExplicitTimeSolver.cpp
 
 clean:
 	rm -f ./$(OBJ)*.o ./$(BIN)*.exe 
-	#rm -rf ./output/ 
 	@echo  removing all object and executable files
+
+clean_results:
+	rm -rf ./Results/ 
+
+plot_test:
+	python FDplot_test.py -f ./input/python_input.in
+
 
