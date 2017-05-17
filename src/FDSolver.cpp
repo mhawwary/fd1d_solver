@@ -362,7 +362,7 @@ void FDSolver::print_cont_vertex_sol(){
     char *fname=nullptr;
     fname = new char[200];
 
-    sprintf(fname,"%snodal/u_comp_N%d_CFL%1.3f_%1.1fT.dat"
+    sprintf(fname,"%snodal/u_num_N%d_CFL%1.3f_%1.1fT.dat"
             ,simdata_->case_postproc_dir, simdata_->Nelem_
             ,simdata_->CFL_
             ,simdata_->Nperiods);

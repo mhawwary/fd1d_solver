@@ -1,0 +1,8 @@
+dir:./Results/FD3rd_biased_RK3_test/
+exact:nodal/u_exact
+numerical:nodal/u_num
+FDOA:3
+RK:3
+Nelem:100
+CFL:0.500
+T:2.00

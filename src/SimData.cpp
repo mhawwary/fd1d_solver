@@ -104,7 +104,7 @@ void SimData::setup_output_directory(){
 
     mkdir("./nodal",0777);
     mkdir("./errors",0777);
-    mkdir("./BINARY",0777);
+    //mkdir("./BINARY",0777);
 
     cout<<"\nCurrnet working directory: "<<current_working_dir<<endl;
     cout<<"Post processing directory: "<<case_postproc_dir<<endl;
@@ -114,6 +114,30 @@ void SimData::setup_output_directory(){
 
     emptyarray(current_working_dir);
     emptyarray(case_dir);
+
+    return;
+}
+
+void SimData::dump_python_inputfile(){
+
+    char *fname=nullptr;
+    fname = new char[100];
+
+    sprintf(fname,"./input/python_input.in");
+
+    FILE* python_out = fopen(fname,"w");
+
+    fprintf(python_out,"dir:%s\n",case_postproc_dir);
+    fprintf(python_out,"exact:%s\n",(char*)"nodal/u_exact");
+    fprintf(python_out,"numerical:%s\n",(char*)"nodal/u_num");
+    fprintf(python_out,"FDOA:%d\n",scheme_order_);
+    fprintf(python_out,"RK:%d\n",RK_order_);
+    fprintf(python_out,"Nelem:%d\n",Nelem_);
+    fprintf(python_out,"CFL:%1.3f\n",CFL_);
+    fprintf(python_out,"T:%1.2f\n",Nperiods);
+
+    fclose(python_out);
+    emptyarray(fname);
 
     return;
 }

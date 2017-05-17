@@ -1,6 +1,6 @@
 [Case]
- num_elements = 20
- x_begin = 0.0
+ num_elements = 100
+ x_begin = -1.0
  x_end = 1.0
  uniform_grid = 1
  refinement_level = 0
@@ -15,23 +15,23 @@
 
 [wave]
  wave_speed = 1;
- wave_form = 0;      # 0: sine wave, 1: Gaussian wave
+ wave_form = 1;      # 0: sine wave, 1: Gaussian wave
  Gaussian_exponent = 38.6;  # u(x) = exp(-38.6 *x^2)
 
 [space_solver]
-  order = 2;
+  order = 3;
   upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme
  
 [time_solver]
  calculate_dt_flag = 1 # 1: specify CFL and calc dt, 0: specify dt and calc CFL
 
- CFL_no = 1.733
+ CFL_no = 0.5
 
  dt = 1e-5
  initial_time = 0
  final_time = 6e5
 
- no_of_periods = 150000.0 #  period = (xf-x0) / wave_speed
+ no_of_periods = 2.0 #  period = (xf-x0) / wave_speed
  
  maximum_iteration = 1e7
 

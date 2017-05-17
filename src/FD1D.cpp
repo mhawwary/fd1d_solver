@@ -50,6 +50,7 @@ void InitSim(const int& argc,char** argv){
 
         simdata.Parse(argv[argc-1]);
         simdata.setup_output_directory();
+        simdata.dump_python_inputfile();
     }
 
     meshdata = new GridData;
