@@ -18,7 +18,7 @@ struct GridData {
     double *h_j=nullptr;  // mesh width for each elements
 
     double *x_exact_ppts=nullptr;
-    int N_exact_ppts=100;
+    int N_exact_ppts=150;
 
     int Nelem=1;
     int Nfaces=2;

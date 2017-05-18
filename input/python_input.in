@@ -1,0 +1,8 @@
+dir:./Results/FD2nd_RK3/
+exact:nodal/u_exact
+numerical:nodal/u_num
+FDOA:2
+RK:3
+Nelem:100
+CFL:0.433
+T:2.00

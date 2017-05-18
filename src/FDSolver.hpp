@@ -61,7 +61,7 @@ public:
 
    double** GetExactSolution(){
 
-       return Q_exact;
+       return Q_exact_pp;
    }
 
    double GetPhyTime(){
@@ -94,7 +94,8 @@ protected:
    void Reset_solver();
    void ComputeExactSolShift();
 
-   void Compute_exact_vertex_sol();
+   void Compute_exact_sol();
+   void Compute_exact_sol_for_plot();
 
 protected:
 
@@ -113,7 +114,9 @@ protected:
 
    double **Q_init=nullptr;  // Nfaces * Ndof long
 
-   double **Q_exact=nullptr; //Nppoints * Ndof long
+   double **Q_exact_pp=nullptr; //Nppoints * Ndof long
+
+   double **Q_exact=nullptr;
 
    double phy_time=0.0;
    double time_step=1e-5;
