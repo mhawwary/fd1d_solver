@@ -47,25 +47,29 @@ void FDSolver::setup_solver(GridData* meshdata_, SimData& osimdata_){
 
     Qn      =  new double* [Nfaces_tot];
     Q_init  =  new double* [Nfaces];
-    Q_exact = new double*[grid_->N_exact_ppts];
+    Q_exact =  new double* [Nfaces];
+    Q_exact_pp = new double*[grid_->N_exact_ppts];
 
     register int i;
 
     for(i=0; i<Nfaces_tot; i++)
         Qn[i]     = new double[Ndof];
 
-    for(i=0; i<Nfaces; i++)
+    for(i=0; i<Nfaces; i++){
         Q_init[i] = new double[Ndof];
+        Q_exact[i] = new double[Ndof];
+    }
 
     for(i=0; i<grid_->N_exact_ppts; i++)
-        Q_exact[i] = new double [Ndof];
+        Q_exact_pp[i] = new double [Ndof];
 
     setup_stencil();
 
     SetPhyTime(simdata_->t_init_);
     CalcTimeStep();
     ComputeExactSolShift();
-    Compute_exact_vertex_sol();
+    Compute_exact_sol();
+    Compute_exact_sol_for_plot();
 
     // Screen Output of input and simulation parameters:
     cout <<"\n===============================================\n";
@@ -88,8 +92,9 @@ void FDSolver::setup_solver(GridData* meshdata_, SimData& osimdata_){
 void FDSolver::Reset_solver(){
 
     emptyarray(Nfaces_tot,Qn);
-    emptyarray(grid_->N_exact_ppts,Q_exact);
+    emptyarray(grid_->N_exact_ppts,Q_exact_pp);
     emptyarray(Nfaces,Q_init);
+    emptyarray(Nfaces,Q_exact);
 
     emptyarray(stencil_index);
     emptyarray(FD_coeff);
@@ -179,12 +184,19 @@ void FDSolver::CalcTimeStep(){
 
         T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
 
-        simdata_->t_end_ = simdata_->Nperiods * T_period;
+        if(simdata_->end_of_sim_flag_==0){
 
-        // Modify the final_time to be
-        // an integer multiple of the time_step:
-        simdata_->t_end_ =
-                ceil(simdata_->t_end_/time_step) * time_step;
+            simdata_->t_end_ = simdata_->Nperiods * T_period;
+
+            // Modify the final_time to be
+            // an integer multiple of the time_step:
+            simdata_->t_end_ =
+                    ceil(simdata_->t_end_/time_step) * time_step;
+
+        }else if(simdata_->end_of_sim_flag_==1){
+
+            simdata_->Nperiods = simdata_->t_end_/T_period;
+        }
 
     }else if(simdata_->calc_dt_flag==0){
 
@@ -292,7 +304,7 @@ void FDSolver::UpdateResid(double **Resid_, double **Qn_){
     return;
 }
 
-void FDSolver::Compute_exact_vertex_sol(){
+void FDSolver::Compute_exact_sol_for_plot(){
 
     register int j;
 
@@ -309,9 +321,9 @@ void FDSolver::Compute_exact_vertex_sol(){
             x1 = xx + wave_length_*floor(xx/-wave_length_);
 
             if(x0==0 && x1==0)
-                Q_exact[j][0] = 0.5*(eval_init_sol(x0)+ eval_init_sol(x1));
+                Q_exact_pp[j][0] = 0.5*(eval_init_sol(x0)+ eval_init_sol(x1));
             else
-                Q_exact[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
+                Q_exact_pp[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
         }
 
     }else if(simdata_->wave_form_==0){
@@ -319,12 +331,48 @@ void FDSolver::Compute_exact_vertex_sol(){
        for(j=0; j<grid_->N_exact_ppts; j++){
 
             xx = grid_->x_exact_ppts[j]- exact_sol_shift;
+            Q_exact_pp[j][0] = eval_init_sol(xx);
+       }
+
+    }
+
+    return;
+}
+
+void FDSolver::Compute_exact_sol(){
+
+    register int j;
+
+    double xx=0.0;
+    double x0,x1;
+
+    if(simdata_->wave_form_==1){
+
+        for(j=0; j<Nfaces; j++){
+
+            xx = grid_->X[j] - exact_sol_shift;
+
+            x0 = xx - wave_length_*floor(xx/wave_length_);
+            x1 = xx + wave_length_*floor(xx/-wave_length_);
+
+            if(x0==0 && x1==0)
+                Q_exact[j][0] = 0.5*(eval_init_sol(x0)+ eval_init_sol(x1));
+            else
+                Q_exact[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
+        }
+
+    }else if(simdata_->wave_form_==0){
+
+       for(j=0; j<Nfaces; j++){
+
+            xx = grid_->X[j]- exact_sol_shift;
             Q_exact[j][0] = eval_init_sol(xx);
        }
 
     }
 
     return;
+
 }
 
 double FDSolver::eval_init_sol(const double& xx){
@@ -387,7 +435,7 @@ void FDSolver::print_cont_vertex_sol(){
 
     for(j=0; j<grid_->N_exact_ppts; j++)
         fprintf(sol_out1, "%2.10e %2.10e\n"
-                ,grid_->x_exact_ppts[j], Q_exact[j][0]);
+                ,grid_->x_exact_ppts[j], Q_exact_pp[j][0]);
 
     fclose(sol_out1);
 
