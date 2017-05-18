@@ -97,8 +97,8 @@ void InitSim(const int& argc,char** argv){
 
 void RunSim(){
 
-//    int check_div_=0,check_conv_=0;
-//    double Q_max=20.0,Q_sum=0.0;
+    int check_div_=0,check_conv_=0;
+    double Q_max=20.0,Q_sum=0.0;
 
     time_solver->setupTimeSolver(fd_solver,&simdata);
 
@@ -122,14 +122,14 @@ void RunSim(){
 
             gtime=fd_solver->GetPhyTime();
 
-//            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
-//                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
+            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
+                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
 
-//            if(time_solver->GetIter()%300000==0){
-//                cout << "Iter No.:  "<<time_solver->GetIter()
-//                     <<"\t Q_max:  "<<Q_max
-//                    <<"\t Q_sum:  "<<Q_sum<<endl;
-//            }
+            if(time_solver->GetIter()%300000==0){
+                cout << "Iter No.:  "<<time_solver->GetIter()
+                     <<"\t Q_max:  "<<Q_max
+                    <<"\t Q_sum:  "<<Q_sum<<endl;
+            }
     }
 
     return;

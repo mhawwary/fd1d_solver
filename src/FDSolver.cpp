@@ -196,6 +196,10 @@ void FDSolver::CalcTimeStep(){
         }else if(simdata_->end_of_sim_flag_==1){
 
             simdata_->Nperiods = simdata_->t_end_/T_period;
+
+        }else if(simdata_->end_of_sim_flag_==2){
+
+            simdata_->t_end_ = simdata_->maxIter_ * time_step;
         }
 
     }else if(simdata_->calc_dt_flag==0){
