@@ -75,11 +75,13 @@ void FDSolver::setup_solver(GridData* meshdata_, SimData& osimdata_){
     cout <<"\n===============================================\n";
     cout << "CFL no.        : "<<CFL<<endl;
     cout << "time step, dt  : "<<time_step<<endl;
+    cout << "last_time_step: "<<last_time_step<<endl;
     cout << "input Nperiods : "<<simdata_->Nperiods<<endl;
     cout << "new   Nperiods : "<<simdata_->t_end_/T_period<<endl;
     cout << "exact_sol_shift: "<<exact_sol_shift<<endl;
     cout << "T_period       : "<<T_period<<endl;
     printf("actual_end_time:%1.2f",simdata_->t_end_);
+    cout <<"\nMax_iter: "<<simdata_->maxIter_<<endl;
 
     cout << "\nNumber of nodes: "<< grid_->Nfaces<<"  dx:  "<<grid_->dx<<endl;
     cout << "Scheme  order : "<< simdata_->scheme_order_  << endl;
@@ -176,49 +178,66 @@ void FDSolver::setup_stencil(){
 
 void FDSolver::CalcTimeStep(){
 
+    T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
+
     if(simdata_->calc_dt_flag==1){
 
-        time_step = (grid_->dx * simdata_->CFL_ )/ simdata_->a_wave_;
-
         CFL = simdata_->CFL_;
-
-        T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
-
-        if(simdata_->end_of_sim_flag_==0){
-
-            simdata_->t_end_ = simdata_->Nperiods * T_period;
-
-            // Modify the final_time to be
-            // an integer multiple of the time_step:
-            simdata_->t_end_ =
-                    ceil(simdata_->t_end_/time_step) * time_step;
-
-        }else if(simdata_->end_of_sim_flag_==1){
-
-            simdata_->Nperiods = simdata_->t_end_/T_period;
-
-        }else if(simdata_->end_of_sim_flag_==2){
-
-            simdata_->t_end_ = simdata_->maxIter_ * time_step;
-        }
+        time_step = (grid_->dx * CFL )/ simdata_->a_wave_;
+        last_time_step = time_step;
+        simdata_->dt_ = time_step;
 
     }else if(simdata_->calc_dt_flag==0){
 
         time_step = simdata_->dt_;
-
+        last_time_step = time_step;
         CFL = simdata_->a_wave_ * time_step / grid_->dx ;
-
-        if(simdata_->end_of_sim_flag_==2){
-            simdata_->t_end_ = simdata_->maxIter_ * time_step;
-        }
-
-        T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
-
-        simdata_->Nperiods = simdata_->t_end_/T_period;
+        simdata_->CFL_ = CFL;
 
     }else {
 
-        FatalError("Wrong Calc_dt_flag");
+        FatalError_exit("Wrong Calc_dt_flag");
+    }
+
+    // Determining end of simulation parameters:
+    //----------------------------------------------------
+
+    if(simdata_->end_of_sim_flag_==0){
+
+        simdata_->t_end_ = simdata_->Nperiods * T_period;
+
+        simdata_->maxIter_ = (int) ceil(simdata_->t_end_/time_step);
+
+        if((simdata_->maxIter_ * time_step) > simdata_->t_end_ ){
+
+            last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
+
+        }else if((simdata_->maxIter_ * time_step) < (simdata_->Nperiods * T_period) ){
+
+            last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
+        }
+
+    }else if(simdata_->end_of_sim_flag_==1){
+
+        simdata_->Nperiods = simdata_->t_end_/T_period;
+        simdata_->maxIter_ = (int) ceil(simdata_->t_end_/time_step);
+
+        if((simdata_->maxIter_ * time_step) > simdata_->t_end_ ){
+
+            last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
+
+        }else if((simdata_->maxIter_ * time_step) < (simdata_->Nperiods * T_period) ){
+
+            last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
+        }
+
+    }else if(simdata_->end_of_sim_flag_==2){
+
+        simdata_->t_end_ = simdata_->maxIter_ * time_step;
+        simdata_->Nperiods = simdata_->t_end_/T_period;
+
+    }else{
+        FatalError_exit("Wrong end_of_simulation_flag");
     }
 
     return;

@@ -50,7 +50,6 @@ void InitSim(const int& argc,char** argv){
 
         simdata.Parse(argv[argc-1]);
         simdata.setup_output_directory();
-        simdata.dump_python_inputfile();
     }
 
     meshdata = new GridData;
@@ -67,6 +66,8 @@ void InitSim(const int& argc,char** argv){
         fd_solver->InitSol();
 
         time_solver = new ExplicitTimeSolver;
+
+        simdata.dump_python_inputfile();
 
         //setup_stencil();
 
@@ -114,7 +115,7 @@ void RunSim(){
 
     gtime=fd_solver->GetPhyTime();
 
-    while ( gtime < (simdata.t_end_-0.5*dt_) ){
+    while ( gtime < simdata.t_end_- 1.05*dt_  ){
 
             time_solver->SolveOneStep(fd_solver->GetNumSolution());
 
@@ -131,6 +132,14 @@ void RunSim(){
                     <<"\t Q_sum:  "<<Q_sum<<endl;
             }
     }
+
+    // Last iteration:
+
+    time_solver->SolveOneStep(fd_solver->GetNumSolution());
+
+    time_solver->space_solver->UpdatePhyTime(fd_solver->GetLastTimeStep());
+
+    gtime=fd_solver->GetPhyTime();
 
     return;
 }

@@ -50,7 +50,13 @@ void SimData::setup_output_directory(){
 
     case_postproc_dir =new char[300];
 
-    char *case_dir=nullptr; case_dir=new char[150];
+    char *case_dir=nullptr,*case_title=nullptr;
+    case_dir=new char[70];
+    case_title=new char[20];
+
+    if(wave_form_==0) sprintf(case_title,"sine_wave");
+    else if(wave_form_==1) sprintf(case_title,"Gaussian_wave");
+
     char scheme_OA_[20];
 
     if(scheme_order_==1){
@@ -92,6 +98,10 @@ void SimData::setup_output_directory(){
     test0 = chdir("./Results");
     if(test0==-1) FatalError_exit("Change directory to ./Results failed");
 
+    mkdir(case_title,0777);
+
+    chdir(case_title);
+
     test0 = chdir(case_dir);
     if(test0==-1) {
         printf("\nCreating Case_directory.....");
@@ -101,7 +111,7 @@ void SimData::setup_output_directory(){
         if(test0==-1) FatalError_exit("Change directory to ./Results/case_dir failed");
     }
 
-    sprintf(case_postproc_dir,"./Results/%s/",case_dir);
+    sprintf(case_postproc_dir,"./Results/%s/%s/",case_title,case_dir);
 
     mkdir("./nodal",0777);
     mkdir("./errors",0777);
