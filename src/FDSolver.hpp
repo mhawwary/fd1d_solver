@@ -23,7 +23,8 @@ public:
    void UpdateResid(double **Resid_, double **Qn_);
    void UpdateSolution(double **Qn_);
 
-   double ComputeSolNodalError();
+   double L1_error_nodal_sol();
+   double L2_error_nodal_sol();
 
    void UpdatePhyTime(const double& dt_){
 
@@ -83,7 +84,7 @@ public:
    }
 
    void print_cont_vertex_sol();
-   void dump_errors(double &L2_error_);
+   void dump_errors(double &L1_error_, double &L2_error_);
 
 protected:
 

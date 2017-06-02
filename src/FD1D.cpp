@@ -146,15 +146,17 @@ void RunSim(){
 
 void PostProcess(){
 
-    double L2_norm_error=fd_solver->ComputeSolNodalError();
+    double L1_error_=fd_solver->L1_error_nodal_sol();
+    double L2_error_=fd_solver->L2_error_nodal_sol();
 
     fd_solver->print_cont_vertex_sol();
 
-    fd_solver->dump_errors(L2_norm_error);
+    fd_solver->dump_errors(L1_error_,L2_error_);
 
     printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
     printf("Final time is: %1.2f\n",fd_solver->GetPhyTime());
-    printf("nodal_L2_Error: %e\n\n",L2_norm_error);
+    printf("nodal_L1_Error: %e , nodal_L2_Error: %e\n\n"
+           ,L1_error_,L2_error_);
 
     return;
 }

@@ -412,7 +412,21 @@ double FDSolver::eval_init_sol(const double& xx){
     }
 }
 
-double FDSolver::ComputeSolNodalError(){
+double FDSolver::L1_error_nodal_sol(){
+
+    register int j;
+
+    double L1_error=0.0;
+
+    for(j=0; j<Nfaces; j++)
+        L1_error += fabs(Q_exact[j][0] - Qn[j+Nghost_l][0]);
+
+    L1_error = L1_error/Nfaces;
+
+    return L1_error;
+}
+
+double FDSolver::L2_error_nodal_sol(){
 
     register int j;
 
@@ -431,79 +445,137 @@ void FDSolver::print_cont_vertex_sol(){
     register int j=0;
 
     char *fname=nullptr;
-    fname = new char[200];
+    fname = new char[100];
 
-    sprintf(fname,"%snodal/u_num_N%d_CFL%1.3f_%1.1fT.dat"
-            ,simdata_->case_postproc_dir, simdata_->Nelem_
-            ,simdata_->CFL_
+    if(simdata_->Sim_mode=="CFL_const" || simdata_->Sim_mode=="normal" || simdata_->Sim_mode=="test"){
+
+        sprintf(fname,"%snodal/u_num_N%d_CFL%1.3f_%1.3fT.dat"
+                ,simdata_->case_postproc_dir, simdata_->Nelem_
+                ,CFL
+                ,simdata_->Nperiods);
+
+        FILE* sol_out=fopen(fname,"w");
+
+        for(j=0; j<Nfaces; j++)
+            fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
+
+        fclose(sol_out);
+
+        emptyarray(fname);
+
+    }else if(simdata_->Sim_mode=="dt_const"){
+
+        sprintf(fname,"%snodal/u_num_N%d_dt%1.3e_%1.3fT.dat"
+                ,simdata_->case_postproc_dir, simdata_->Nelem_
+                ,time_step
+                ,simdata_->Nperiods);
+
+        FILE* sol_out=fopen(fname,"w");
+
+        for(j=0; j<Nfaces; j++)
+            fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
+
+        fclose(sol_out);
+
+        emptyarray(fname);
+
+    }
+
+    fname = new char[100];
+
+    sprintf(fname,"%snodal/u_exact_N%d_%1.3fT.dat"
+            ,simdata_->case_postproc_dir
+            ,grid_->N_exact_ppts
             ,simdata_->Nperiods);
 
     FILE* sol_out=fopen(fname,"w");
 
-    for(j=0; j<Nfaces; j++)
-        fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
-
-    fclose(sol_out);
-
-    emptyarray(fname);
-
-    fname = new char[200];
-
-    sprintf(fname,"%snodal/u_exact_N%d_CFL%1.3f_%1.1fT.dat"
-            ,simdata_->case_postproc_dir,simdata_->Nelem_
-            ,simdata_->CFL_
-            ,simdata_->Nperiods);
-
-    FILE* sol_out1=fopen(fname,"w");
-
     for(j=0; j<grid_->N_exact_ppts; j++)
-        fprintf(sol_out1, "%2.10e %2.10e\n"
+        fprintf(sol_out, "%2.10e %2.10e\n"
                 ,grid_->x_exact_ppts[j], Q_exact_pp[j][0]);
 
-    fclose(sol_out1);
+    fclose(sol_out);
 
     emptyarray(fname);
 
     return;
 }
 
-void FDSolver::dump_errors(double &L2_error_){
+void FDSolver::dump_errors(double &L1_error_, double &L2_error_){
 
     char *fname=nullptr;
-    fname = new char[200];
+    fname = new char[100];
 
-    sprintf(fname,"%serrors/sol_errors_CFL%1.3f_%1.1fT.dat"
-            ,simdata_->case_postproc_dir
-            ,simdata_->CFL_
-            ,simdata_->Nperiods);
+    if(simdata_->Sim_mode=="CFL_const"){
 
-    FILE* solerror_out=fopen(fname,"w");
+        sprintf(fname,"%serrors/nodal_errors_CFL%1.3f_%1.3fT.dat"
+                ,simdata_->case_postproc_dir
+                ,CFL
+                ,simdata_->Nperiods);
 
-    fprintf(solerror_out, "%d %2.10e\n"
-            ,grid_->Nelem, L2_error_);
+        FILE* solerror_out=fopen(fname,"at+");
 
-     fclose(solerror_out);
+        fprintf(solerror_out, "%d %2.10e %2.10e\n"
+                ,grid_->Nelem, L1_error_, L2_error_);
 
-     emptyarray(fname);
+        fclose(solerror_out);
+        emptyarray(fname); fname = new char[100];
 
-     // Dumping all errors in one file as a function of beta:
-     //--------------------------------------------------------
-//     fname = new char[200];
+        sprintf(fname,"%serrors/nodal_errors_N%d_CFL%1.3f_%1.3fT.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,CFL
+                ,simdata_->Nperiods);
 
-//     sprintf(fname,"%serrors/sol_errors_N%d_CFL%1.2f_allBeta_%1.1fT.dat"
-//             ,simdata_->case_postproc_dir
-//             ,grid_->Nelem
-//             ,simdata_->CFL_
-//             ,simdata_->Nperiods);
+        solerror_out=fopen(fname,"w");
 
-//     solerror_out=fopen(fname,"at+");
+        fprintf(solerror_out,"%2.10e %2.10e\n",L1_error_, L2_error_);
 
-//     fprintf(solerror_out, "%1.2f %2.10e %2.10e\n"
-//             ,simdata_->upwind_param_, proj_sol_L2, aver_L2);
+        fclose(solerror_out);
 
-//      fclose(solerror_out);
+    }else if(simdata_->Sim_mode=="dt_const"){
 
-//      emptyarray(fname);
+        sprintf(fname,"%serrors/nodal_errors_dt%1.3e_%1.3fT.dat"
+                ,simdata_->case_postproc_dir
+                ,time_step
+                ,simdata_->Nperiods);
+
+        FILE* solerror_out=fopen(fname,"at+");
+
+        fprintf(solerror_out, "%d %2.10e %2.10e\n"
+                ,grid_->Nelem, L1_error_, L2_error_);
+
+        fclose(solerror_out);
+        emptyarray(fname); fname = new char[100];
+
+        sprintf(fname,"%serrors/nodal_errors_N%d_dt%1.3e_%1.3fT.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,time_step
+                ,simdata_->Nperiods);
+
+        solerror_out=fopen(fname,"w");
+
+        fprintf(solerror_out,"%2.10e %2.10e\n",L1_error_, L2_error_);
+
+        fclose(solerror_out);
+
+    }else{
+
+        sprintf(fname,"%serrors/nodal_errors_N%d_CFL%1.3f_%1.3fT.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,CFL
+                ,simdata_->Nperiods);
+
+        FILE* solerror_out=fopen(fname,"w");
+
+        fprintf(solerror_out,"%2.10e %2.10e\n",L1_error_, L2_error_);
+
+        fclose(solerror_out);
+    }
+
+    emptyarray(fname);
 
     return;
 }

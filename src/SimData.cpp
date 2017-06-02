@@ -70,7 +70,7 @@ void SimData::setup_output_directory(){
         sprintf(scheme_OA_,"4th");
     }else{ _notImplemented("Scheme order"); }
 
-    if(Sim_mode=="normal"){
+    if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const"){
         sprintf(case_dir,"FD%s_RK%d",scheme_OA_,RK_order_);
     }else if(Sim_mode=="test"){
         sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
