@@ -1,8 +1,12 @@
-dir:./Results/FD2nd_RK3/
+dir:./Results/sine_wave/FD2nd_RK3/
+errors:errors/errors
 exact:nodal/u_exact
 numerical:nodal/u_num
 FDOA:2
 RK:3
-Nelem:100
-CFL:0.433
-T:2.00
+Nelem:320
+Nexact:150
+CFL:1.732
+dt:5.413e-03
+T:50.000
+mode:dt_const

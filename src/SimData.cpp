@@ -140,6 +140,7 @@ void SimData::dump_python_inputfile(){
     FILE* python_out = fopen(fname,"w");
 
     fprintf(python_out,"dir:%s\n",case_postproc_dir);
+    fprintf(python_out,"errors:%s\n",(char*)"errors/errors");
     fprintf(python_out,"exact:%s\n",(char*)"nodal/u_exact");
     fprintf(python_out,"numerical:%s\n",(char*)"nodal/u_num");
     fprintf(python_out,"FDOA:%d\n",scheme_order_);
@@ -147,7 +148,9 @@ void SimData::dump_python_inputfile(){
     fprintf(python_out,"Nelem:%d\n",Nelem_);
     fprintf(python_out,"Nexact:%d\n",N_exact_ppts);
     fprintf(python_out,"CFL:%1.3f\n",CFL_);
-    fprintf(python_out,"T:%1.2f\n",Nperiods);
+    fprintf(python_out,"dt:%1.3e\n",dt_);
+    fprintf(python_out,"T:%1.3f\n",Nperiods);
+    fprintf(python_out,"mode:%s\n",Sim_mode.c_str());
 
     fclose(python_out);
     emptyarray(fname);

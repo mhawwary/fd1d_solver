@@ -17,7 +17,9 @@ with open(args.python_input) as file:
     reader=csv.reader(file, delimiter=':');
 
     for row in reader:
-        if row[0]=='CFL':    
+        if row[0]=='mode':
+            mode=str(row[1]);
+        elif row[0]=='CFL':    
             CFL=Decimal(row[1]);
         elif row[0]=='FDOA':
             FD=str(row[1]);
@@ -25,6 +27,10 @@ with open(args.python_input) as file:
             RK=str(row[1]);
         elif row[0] == 'Nelem':    
             Nelem=str(int(row[1]));
+        elif row[0] == 'Nexact':    
+            Nexact=str(int(row[1]));
+        elif row[0]=='dt':
+            dt_=str(row[1]);
         elif row[0] == 'T':     
             T=Decimal(row[1]);
         elif row[0] =='dir':    
@@ -35,16 +41,25 @@ with open(args.python_input) as file:
             sol_comp = str(row[1]);
 
 CFL=Decimal(CFL.quantize(Decimal('.001')));
-T=Decimal(T.quantize(Decimal('.1')));
+T=Decimal(T.quantize(Decimal('.001')));
+dt = float(dt_);
 
+fname_exact = dir1+sol_exact+str("_N")+Nexact+"_"+str(T)+str("T.dat");
+data_exact= loadtxt(fname_exact);
 
-fname_u_exact = dir1+sol_exact+str("_N")+Nelem\
-+str("_CFL")+str(CFL)+str("_")+str(T)+str("T.dat");
-data_exact= loadtxt(fname_u_exact);
+#if mode=='CFL_const':
+#	fname_comp = dir1+sol_comp+str("_N")+Nelem\
+#	+str("_CFL")+str(CFL)+str("_")+str(T)+str("T.dat");
+#	data_num= loadtxt(fname_comp);
 
-fname_u_comp = dir1+sol_comp+str("_N")+Nelem\
-+str("_CFL")+str(CFL)+str("_")+str(T)+str("T.dat");
-data_num= loadtxt(fname_u_comp);
+if mode=='dt_const':
+	fname_comp = dir1+sol_comp+str("_N")+Nelem\
+	+str("_dt")+dt_+str("_")+str(T)+str("T.dat");
+	data_num= loadtxt(fname_comp);
+else:
+	fname_comp = dir1+sol_comp+str("_N")+Nelem\
+	+str("_CFL")+str(CFL)+str("_")+str(T)+str("T.dat");
+	data_num= loadtxt(fname_comp);
 
 x_exact = data_exact[:,0]; 
 u_exact = data_exact[:,1]; 
@@ -89,8 +104,12 @@ elif int(FD)==3:
 elif int(FD)==4:
     FDOA = str("4th order central"); 
 
-title_a = str("FD ")+ FDOA + ", RK"+ RK \
-+ " with CFL="+ str(CFL)+ " and at t/T="+str(T);
+if mode=='dt_const':
+	title_a = str("FD")+ FDOA +  " RK"+ RK\
+	+" with dt="+ '{:1.2e}'.format(dt)+ ' at t/T='+str(Decimal(T.quantize(Decimal('.01'))));
+else:
+	title_a = str("FD ")+ FDOA + ", RK"+ RK \
+	+ " with CFL="+ str(CFL)+ ' and at t/T='+str(Decimal(T.quantize(Decimal('.01'))));
 
 pyplot.title(title_a);
 pyplot.xlabel('X');

@@ -1,9 +1,10 @@
 [Case]
- num_elements = 20
+ num_elements = 320
  x_begin = 0.0
  x_end = 1.0
  uniform_grid = 1
  refinement_level = 0
+ N_exact_ploting_pts = 150
 
 [Simulation] 
  print_freq = 10
@@ -11,7 +12,7 @@
  divergence_threshold = 20  
  restart_flag = 0
  restart_iter = 158e6
- mode = test  # normal/test
+ mode = dt_const  # normal/test
 
 [wave]
  wave_speed = 1;
