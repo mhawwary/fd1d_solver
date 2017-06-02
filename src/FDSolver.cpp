@@ -447,26 +447,11 @@ void FDSolver::print_cont_vertex_sol(){
     char *fname=nullptr;
     fname = new char[100];
 
-    if(simdata_->Sim_mode=="CFL_const" || simdata_->Sim_mode=="normal" || simdata_->Sim_mode=="test"){
-
-        sprintf(fname,"%snodal/u_num_N%d_CFL%1.3f_%1.3fT.dat"
-                ,simdata_->case_postproc_dir, simdata_->Nelem_
-                ,CFL
-                ,simdata_->Nperiods);
-
-        FILE* sol_out=fopen(fname,"w");
-
-        for(j=0; j<Nfaces; j++)
-            fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
-
-        fclose(sol_out);
-
-        emptyarray(fname);
-
-    }else if(simdata_->Sim_mode=="dt_const"){
+    if(simdata_->Sim_mode=="dt_const"){
 
         sprintf(fname,"%snodal/u_num_N%d_dt%1.3e_%1.3fT.dat"
-                ,simdata_->case_postproc_dir, simdata_->Nelem_
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
                 ,time_step
                 ,simdata_->Nperiods);
 
@@ -476,16 +461,30 @@ void FDSolver::print_cont_vertex_sol(){
             fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
 
         fclose(sol_out);
-
         emptyarray(fname);
 
+    }else{
+        sprintf(fname,"%snodal/u_num_N%d_CFL%1.3f_%1.3fT.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,CFL
+                ,simdata_->Nperiods);
+
+        FILE* sol_out=fopen(fname,"w");
+
+        for(j=0; j<Nfaces; j++)
+            fprintf(sol_out, "%2.10e %2.10e\n"
+                    ,grid_->X[j], Qn[j+Nghost_l][0]);
+
+        fclose(sol_out);
+
+        emptyarray(fname);
     }
 
     fname = new char[100];
 
-    sprintf(fname,"%snodal/u_exact_N%d_%1.3fT.dat"
+    sprintf(fname,"%snodal/u_exact_%1.3fT.dat"
             ,simdata_->case_postproc_dir
-            ,grid_->N_exact_ppts
             ,simdata_->Nperiods);
 
     FILE* sol_out=fopen(fname,"w");
@@ -495,7 +494,6 @@ void FDSolver::print_cont_vertex_sol(){
                 ,grid_->x_exact_ppts[j], Q_exact_pp[j][0]);
 
     fclose(sol_out);
-
     emptyarray(fname);
 
     return;
