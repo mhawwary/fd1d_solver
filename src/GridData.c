@@ -17,7 +17,7 @@ void GridData::set_grid_param(const SimData& simdata_){
 
     h_j = new double [Nelem];
 
-    N_exact_ppts= 150;
+    N_exact_ppts= simdata_.N_exact_ppts;
 
     x_exact_ppts = new double[N_exact_ppts];
 

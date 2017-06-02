@@ -11,6 +11,7 @@ void SimData::Parse(const std::string &fname){
     xf_ = gp_input("Case/x_end",1.0);
     uniform_ = gp_input("Case/uniform_grid",1);
     refine_level_ = gp_input("Case/refinement_level",0);
+    N_exact_ppts = gp_input("Case/N_exact_ploting_pts",100);
 
     print_freq_=gp_input("Simulation/print_freq",0);
     conv_tol_=gp_input("Simulation/convergence_tolerance",1e-16);
@@ -144,6 +145,7 @@ void SimData::dump_python_inputfile(){
     fprintf(python_out,"FDOA:%d\n",scheme_order_);
     fprintf(python_out,"RK:%d\n",RK_order_);
     fprintf(python_out,"Nelem:%d\n",Nelem_);
+    fprintf(python_out,"Nexact:%d\n",N_exact_ppts);
     fprintf(python_out,"CFL:%1.3f\n",CFL_);
     fprintf(python_out,"T:%1.2f\n",Nperiods);
 

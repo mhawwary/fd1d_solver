@@ -12,6 +12,7 @@ struct SimData {
     double xf_=1.0;
     int uniform_=1;  // flag for uniform/nonunifrom grids, 1: uniform
     int refine_level_=0; // 0: no refinement
+    int N_exact_ppts = 100;
 
     int print_freq_=10;
     double conv_tol_=1e-15;
