@@ -23,6 +23,7 @@ struct SimData {
 
     double a_wave_=2;
     int wave_form_ = 0;  // 0: sine wave, 1: Gaussian wave
+    double wave_freq_=2.0;  // wave_freq_ x PI
     double Gaussian_exponent_ = -40; // u(x) = exp(-38.6 *x^2)
 
     int scheme_order_=0;    // FD Scheme order

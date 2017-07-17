@@ -22,6 +22,7 @@ void SimData::Parse(const std::string &fname){
 
     a_wave_ = gp_input("wave/wave_speed",1);
     wave_form_ = gp_input("wave/wave_form",0);
+    wave_freq_ = gp_input("wave/wave_frequency",2.0);  // for sine waves
     Gaussian_exponent_ = gp_input("wave/Gaussian_exponent",-50.0);
 
     scheme_order_=gp_input("space_solver/order",1);

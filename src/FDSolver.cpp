@@ -402,7 +402,7 @@ double FDSolver::eval_init_sol(const double& xx){
 
     if(simdata_->wave_form_==0){
 
-        return sin(2*PI*xx);
+        return sin(simdata_->wave_freq_*PI*xx);  // wave_freq_ x PI
 
     }else if(simdata_->wave_form_==1){
 
