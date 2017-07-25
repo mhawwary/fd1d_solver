@@ -70,6 +70,8 @@ void SimData::setup_output_directory(){
         else sprintf(scheme_OA_,"3rd_fupwind");
     }else if(scheme_order_==4){
         sprintf(scheme_OA_,"4th");
+    }else if(scheme_order_==6){
+        sprintf(scheme_OA_,"6th");
     }else{ _notImplemented("Scheme order"); }
 
     if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const"){

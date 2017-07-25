@@ -130,6 +130,7 @@ void RunSim(){
                 cout << "Iter No.:  "<<time_solver->GetIter()
                      <<"\t Q_max:  "<<Q_max
                     <<"\t Q_sum:  "<<Q_sum<<endl;
+//                cin.get();
             }
     }
 

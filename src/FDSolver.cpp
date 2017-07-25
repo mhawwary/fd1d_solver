@@ -41,6 +41,10 @@ void FDSolver::setup_solver(GridData* meshdata_, SimData& osimdata_){
     }else if(scheme_order_==4){
         Nghost_l=2;
         Nghost_r=2;
+
+    }else if(scheme_order_==6){
+        Nghost_l=3;
+        Nghost_r=3;
     }
 
     Nfaces_tot = Nghost_l + Nfaces + Nghost_r;
@@ -171,6 +175,24 @@ void FDSolver::setup_stencil(){
         FD_coeff [2] =   0.0;
         FD_coeff [3] =  -2.0/3.0;
         FD_coeff [4] =   1.0/12.0;
+
+    }else if (scheme_order_==6){ // 6th order central scheme
+
+        stencil_index[0] =  3;
+        stencil_index[1] =  2;
+        stencil_index[2] =  1;
+        stencil_index[3] =  0;
+        stencil_index[4] = -1;
+        stencil_index[5] = -2;
+        stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+
+        FD_coeff [0] =   1.0/6.0;
+        FD_coeff [1] =  -0.15;
+        FD_coeff [2] =   0.75;
+        FD_coeff [3] =   0.00;
+        FD_coeff [4] =  -0.75;
+        FD_coeff [5] =   0.15;
+        FD_coeff [6] =  -1.0/6.0;
     }
 
     return;

@@ -251,8 +251,8 @@ void ExplicitTimeSolver::classicRK4(double **q_){
     for(j=0; j<Nfaces; j++)
         for(k=0; k<Ndof; k++)
             q_[j+Nghost_l][k] = q_temp[j][k]
-                    + (dt_/6.) * ( resid_temp0[j][k] + 2*resid_temp1[j][k]
-                                   + 2*resid_temp2[j][k] + resid[j][k] );
+                    + (dt_/6.0) * ( resid_temp0[j][k] + 2.0*resid_temp1[j][k]
+                                   + 2.0*resid_temp2[j][k] + resid[j][k] );
 
     space_solver->UpdateResid(resid,q_);
 
