@@ -25,8 +25,11 @@ void SimData::Parse(const std::string &fname){
     wave_freq_ = gp_input("wave/wave_frequency",2.0);  // for sine waves
     Gaussian_exponent_ = gp_input("wave/Gaussian_exponent",-50.0);
 
+    eqn_set = gp_input("space_solver/eqn_set","Advection");
     scheme_order_=gp_input("space_solver/order",1);
     upwind_biased_=gp_input("space_solver/upwind_biased",1);
+    thermal_diffus
+            = gp_input("space_solver/heat_eqn/thermal_diffusivity",1.0);
 
     RK_order_=gp_input("time_solver/explicit/RK_order",0);
 
@@ -54,10 +57,13 @@ void SimData::setup_output_directory(){
 
     char *case_dir=nullptr,*case_title=nullptr;
     case_dir=new char[70];
-    case_title=new char[20];
+    case_title=new char[30];
 
     if(wave_form_==0) sprintf(case_title,"sine_wave");
     else if(wave_form_==1) sprintf(case_title,"Gaussian_wave");
+    else if(wave_form_==2) sprintf(case_title,"InViscid_Burgers");
+    else if(wave_form_==3) sprintf(case_title,"Decaying_Burgers_turb");
+    else FatalError_exit("Wrong Wave form and not implemented");
 
     char scheme_OA_[20];
 
@@ -80,14 +86,27 @@ void SimData::setup_output_directory(){
         sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
     }else _notImplemented("Simulation mode");
 
+    char *main_dir=nullptr; main_dir = new char[25];
+
+    if(eqn_set=="Advection"){
+        sprintf(main_dir,"Results");
+    }else if (eqn_set=="Diffusion"){
+        sprintf(main_dir ,"Results_diffus");
+    }else if (eqn_set=="Advection_Diffusion"){
+        sprintf(main_dir ,"Results_AdvecDiffus");
+    }else{
+        FatalError_exit("Equation set when specifying output directory");
+    }
+
     int test0=0;
 
     char *current_working_dir=new char[1000];
     getcwd(current_working_dir,1000);
 
-    char results_dir[1500];
+    char* results_dir=nullptr; results_dir = new char[1050];
 
-    sprintf(results_dir,"%s/Results",current_working_dir);
+    //sprintf(results_dir,"%s/Results",current_working_dir);
+    sprintf(results_dir,"%s/%s",current_working_dir,main_dir);
 
     if(stat(results_dir, &statbuf) == -1){
           //mkdir("./Results",0777);
@@ -95,11 +114,12 @@ void SimData::setup_output_directory(){
 
     if(!S_ISDIR(statbuf.st_mode)){
         printf("\nResults directory does not exist.....\nCreating Results directory......");
-        test0 = mkdir("./Results",0777);
+        //test0 = mkdir("./Results",0777);
+        test0 = mkdir(results_dir,0777);
         if(test0==-1) FatalError_exit("Failed to create Results directoy");
     }
 
-    test0 = chdir("./Results");
+    test0 = chdir(results_dir);
     if(test0==-1) FatalError_exit("Change directory to ./Results failed");
 
     mkdir(case_title,0777);
@@ -129,6 +149,9 @@ void SimData::setup_output_directory(){
 
     emptyarray(current_working_dir);
     emptyarray(case_dir);
+    emptyarray(main_dir);
+    emptyarray(case_title);
+    emptyarray(results_dir);
 
     return;
 }

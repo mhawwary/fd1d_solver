@@ -1,5 +1,5 @@
-﻿#ifndef DGSOLVER_H
-#define DGSOLVER_H
+﻿#ifndef FDSOLVER_H
+#define FDSOLVER_H
 
 #include"GridData.h"
 #include"SimData.hpp"
@@ -14,17 +14,17 @@ class FDSolver{
 public:
 
 //  Construction Functions :
-   FDSolver(void);
-   ~FDSolver(void);
+   FDSolver(){}
+   virtual ~FDSolver(){}
 
-   void setup_solver(GridData* meshdata_, SimData& simdata_);
+   virtual void setup_solver(GridData* meshdata_, SimData& simdata_)=0;
 
-   void InitSol();
-   void UpdateResid(double **Resid_, double **Qn_);
-   void UpdateSolution(double **Qn_);
+   virtual void InitSol()=0;
+   virtual void UpdateResid(double **Resid_, double **Qn_)=0;
+   //virtual void UpdateSolution(double **Qn_)=0;
 
-   double L1_error_nodal_sol();
-   double L2_error_nodal_sol();
+   virtual double L1_error_nodal_sol()=0;
+   virtual double L2_error_nodal_sol()=0;
 
    void UpdatePhyTime(const double& dt_){
 
@@ -83,25 +83,24 @@ public:
        return Nghost_l;
    }
 
-   void print_cont_vertex_sol();
-   void dump_errors(double &L1_error_, double &L2_error_);
+   virtual void print_cont_vertex_sol()=0;
+   virtual void dump_errors(double &L1_error_, double &L2_error_)=0;
 
 protected:
 
-   void setup_stencil();
+   virtual void setup_stencil()=0;
 
-   void update_ghost_sol(double **Qn_);
+   virtual void update_ghost_sol(double **Qn_)=0;
 
-   double eval_init_sol(const double& xx);
+   virtual double eval_init_sol(const double& xx)=0;
 
-   void CalcTimeStep();
-   void CalcLocalTimeStep();
+   virtual void CalcTimeStep()=0;
 
-   void Reset_solver();
-   void ComputeExactSolShift();
+   virtual void Reset_solver()=0;
+   virtual void ComputeExactSolShift()=0;
 
-   void Compute_exact_sol();
-   void Compute_exact_sol_for_plot();
+   virtual void Compute_exact_sol()=0;
+   virtual void Compute_exact_sol_for_plot()=0;
 
 protected:
 

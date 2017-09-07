@@ -1,15 +1,15 @@
-#include "FDSolver.hpp"
+#include "FDSolverAdvecDiffus.hpp"
 
 // Constructor/Destructor/ Setup functions:
 //------------------------------------------------
-FDSolver::FDSolver(void){}
+FDSolverAdvecDiffus::FDSolverAdvecDiffus(void){}
 
-FDSolver::~FDSolver(void){
+FDSolverAdvecDiffus::~FDSolverAdvecDiffus(void){
 
     Reset_solver();
 }
 
-void FDSolver::setup_solver(GridData* meshdata_, SimData& osimdata_){
+void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
 
     grid_ = meshdata_;
     simdata_ = &osimdata_;
@@ -95,7 +95,7 @@ void FDSolver::setup_solver(GridData* meshdata_, SimData& osimdata_){
     return;
 }
 
-void FDSolver::Reset_solver(){
+void FDSolverAdvecDiffus::Reset_solver(){
 
     emptyarray(Nfaces_tot,Qn);
     emptyarray(grid_->N_exact_ppts,Q_exact_pp);
@@ -105,24 +105,27 @@ void FDSolver::Reset_solver(){
     emptyarray(stencil_index);
     emptyarray(FD_coeff);
 
+    emptyarray(stencil_index_2nd);
+    emptyarray(FD_coeff_2nd);
+
     return;
 }
 
 // Solver functions
 //-------------------------------------------
 
-void FDSolver::setup_stencil(){
+void FDSolverAdvecDiffus::setup_stencil(){
 
     stencil_index = new int[scheme_order_+1];
     FD_coeff = new double [scheme_order_+1];
 
+    stencil_index_2nd = new int[scheme_order_+1];
+    FD_coeff_2nd = new double [scheme_order_+1];
+
     if(scheme_order_==1){      // first order upwind scheme
 
-        stencil_index[0] =  0;
-        stencil_index[1] = -1;           //[j,j-1];
-
-        FD_coeff [0] =  1;
-        FD_coeff [1] = -1;
+        _notImplemented("There is no 1st order stencil defined for advec-diffus");
+        FatalError_exit("stencil setup");
 
     } else if (scheme_order_==2) { // 2nd order central scheme
 
@@ -130,37 +133,22 @@ void FDSolver::setup_stencil(){
         stencil_index[1] =  0;
         stencil_index[2] = -1;           //[j+1,j,j-1];
 
+        stencil_index_2nd[0] = stencil_index[0];
+        stencil_index_2nd[1] = stencil_index[1];
+        stencil_index_2nd[2] = stencil_index[2];
+
         FD_coeff [0] =  0.5;
         FD_coeff [1] =  0.0;
         FD_coeff [2] = -0.5;
 
+        FD_coeff_2nd [0] =  1.0;
+        FD_coeff_2nd [1] = -2.0;
+        FD_coeff_2nd [2] =  1.0;
+
     }else if (scheme_order_==3){
 
-        if(simdata_->upwind_biased_==0) {  //for 3rd order fully upwind:
-            stencil_index[0] =  0;
-            stencil_index[1] = -1;
-            stencil_index[2] = -2;
-            stencil_index[3] = -3;  // [j,j-1,j-2,j-3];
-
-            FD_coeff [0] =  11.0/6.0;
-            FD_coeff [1] =  -3.0;
-            FD_coeff [2] =   3.0/2.0;
-            FD_coeff [3] =  -1.0/3.0;
-
-        }else if(simdata_->upwind_biased_==1){ // for 3rd order upwind biased :
-            stencil_index[0] =  1;
-            stencil_index[1] =  0;
-            stencil_index[2] = -1;
-            stencil_index[3] = -2;  //[j+1,j,j-1,j-2];
-
-            FD_coeff [0] =  1.0/3.0;
-            FD_coeff [1] =  0.5;
-            FD_coeff [2] = -1.0;
-            FD_coeff [3] =  1.0/6.0;
-
-        }else{
-            FatalError("Wrong biased upwind parameter for 3rd order scheme");
-        }
+        _notImplemented("There is no 3rd order stencil defined for advec-diffus");
+        FatalError_exit("stencil setup");
 
     }else if (scheme_order_==4){ // 4th order central scheme
 
@@ -170,11 +158,23 @@ void FDSolver::setup_stencil(){
         stencil_index[3] = -1;
         stencil_index[4] = -2;  //[j+2,j+1,j,j-1,j-2];
 
+        stencil_index_2nd[0] = stencil_index[0];
+        stencil_index_2nd[1] = stencil_index[1];
+        stencil_index_2nd[2] = stencil_index[2];
+        stencil_index_2nd[3] = stencil_index[3];
+        stencil_index_2nd[4] = stencil_index[4];
+
         FD_coeff [0] =  -1.0/12.0;
         FD_coeff [1] =   2.0/3.0;
         FD_coeff [2] =   0.0;
         FD_coeff [3] =  -2.0/3.0;
         FD_coeff [4] =   1.0/12.0;
+
+        FD_coeff_2nd [0] =  -1.0/12.0;
+        FD_coeff_2nd [1] =   4.0/3.0;
+        FD_coeff_2nd [2] =  -2.50;
+        FD_coeff_2nd [3] =   4.0/3.0;
+        FD_coeff_2nd [4] =  -1.0/12.0;
 
     }else if (scheme_order_==6){ // 6th order central scheme
 
@@ -186,6 +186,13 @@ void FDSolver::setup_stencil(){
         stencil_index[5] = -2;
         stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
 
+        stencil_index_2nd[0] = stencil_index[0];
+        stencil_index_2nd[1] = stencil_index[1];
+        stencil_index_2nd[2] = stencil_index[2];
+        stencil_index_2nd[3] = stencil_index[3];
+        stencil_index_2nd[4] = stencil_index[4];
+        stencil_index_2nd[5] = stencil_index[5];
+
         FD_coeff [0] =   1.0/6.0;
         FD_coeff [1] =  -0.15;
         FD_coeff [2] =   0.75;
@@ -193,12 +200,20 @@ void FDSolver::setup_stencil(){
         FD_coeff [4] =  -0.75;
         FD_coeff [5] =   0.15;
         FD_coeff [6] =  -1.0/6.0;
+
+        FD_coeff_2nd [0] =   1.0/90.0;
+        FD_coeff_2nd [1] =   0.15;
+        FD_coeff_2nd [2] =   1.50;
+        FD_coeff_2nd [3] =  -49.0/18.0;
+        FD_coeff_2nd [4] =   1.50;
+        FD_coeff_2nd [5] =   0.15;
+        FD_coeff_2nd [6] =   1.0/90.0;
     }
 
     return;
 }
 
-void FDSolver::CalcTimeStep(){
+void FDSolverAdvecDiffus::CalcTimeStep(){
 
     T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
 
@@ -265,7 +280,7 @@ void FDSolver::CalcTimeStep(){
     return;
 }
 
-void FDSolver::InitSol(){
+void FDSolverAdvecDiffus::InitSol(){
 
     register int j;
 
@@ -284,7 +299,7 @@ void FDSolver::InitSol(){
     return;
 }
 
-void FDSolver::ComputeExactSolShift(){
+void FDSolverAdvecDiffus::ComputeExactSolShift(){
 
     // Preparing shift information:
     //-------------------------------
@@ -297,7 +312,7 @@ void FDSolver::ComputeExactSolShift(){
     return;
 }
 
-void FDSolver::update_ghost_sol(double **Qn_){
+void FDSolverAdvecDiffus::update_ghost_sol(double **Qn_){
 
     register int i;
 
@@ -316,7 +331,7 @@ void FDSolver::update_ghost_sol(double **Qn_){
     return;
 }
 
-void FDSolver::UpdateResid(double **Resid_, double **Qn_){
+void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
 
     // First Update ghost nodes:
     //-----------------------------
@@ -328,28 +343,42 @@ void FDSolver::UpdateResid(double **Resid_, double **Qn_){
 
     register int i;
 
-    int k=0,j=0,s;
+    int k=0,j=0,s1,s2;
 
     double Idx = grid_->Idx;
 
-    double temp=0.0;
+    double temp_inv=0.0, temp_visc=0.0, invFlux=0.0;
 
     for(i=0; i<Nfaces; i++){
         for(k=0; k<Ndof; k++){
-            temp=0.0;
+            temp_inv=0.0;
+            temp_visc=0.0;
             for(j=0; j<scheme_order_+1; j++){
-                s = stencil_index[j];
-                temp += Qn_[i+Nghost_l+s][k] * FD_coeff[j];
+                s1 = stencil_index[j];
+                s2 = stencil_index_2nd[j];
+                invFlux = evaluate_inviscid_flux(Qn_[i+Nghost_l+s1][k]);
+                temp_inv  += invFlux * FD_coeff[j];
+                temp_visc += Qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
             }
 
-            Resid_[i][k] = - temp * Idx;
+            Resid_[i][k] = (- temp_inv * Idx )
+                    + ( temp_visc *Idx*Idx *simdata_->thermal_diffus );
         }
     }
 
     return;
 }
 
-void FDSolver::Compute_exact_sol_for_plot(){
+double FDSolverAdvecDiffus::evaluate_inviscid_flux(double qn_){
+
+    if(simdata_->wave_form_==2 || simdata_->wave_form_==3){ // Burgers equation
+        return 0.5 *qn_*qn_;
+    }else if(simdata_->wave_form_==0 || simdata_->wave_form_==1){
+        return qn_*simdata_->a_wave_;
+    }
+}
+
+void FDSolverAdvecDiffus::Compute_exact_sol_for_plot(){
 
     register int j;
 
@@ -384,7 +413,7 @@ void FDSolver::Compute_exact_sol_for_plot(){
     return;
 }
 
-void FDSolver::Compute_exact_sol(){
+void FDSolverAdvecDiffus::Compute_exact_sol(){
 
     register int j;
 
@@ -420,7 +449,7 @@ void FDSolver::Compute_exact_sol(){
 
 }
 
-double FDSolver::eval_init_sol(const double& xx){
+double FDSolverAdvecDiffus::eval_init_sol(const double& xx){
 
     if(simdata_->wave_form_==0){
 
@@ -434,7 +463,7 @@ double FDSolver::eval_init_sol(const double& xx){
     }
 }
 
-double FDSolver::L1_error_nodal_sol(){
+double FDSolverAdvecDiffus::L1_error_nodal_sol(){
 
     register int j;
 
@@ -448,7 +477,7 @@ double FDSolver::L1_error_nodal_sol(){
     return L1_error;
 }
 
-double FDSolver::L2_error_nodal_sol(){
+double FDSolverAdvecDiffus::L2_error_nodal_sol(){
 
     register int j;
 
@@ -462,7 +491,7 @@ double FDSolver::L2_error_nodal_sol(){
     return L2_error;
 }
 
-void FDSolver::print_cont_vertex_sol(){
+void FDSolverAdvecDiffus::print_cont_vertex_sol(){
 
     register int j=0;
 
@@ -521,7 +550,7 @@ void FDSolver::print_cont_vertex_sol(){
     return;
 }
 
-void FDSolver::dump_errors(double &L1_error_, double &L2_error_){
+void FDSolverAdvecDiffus::dump_errors(double &L1_error_, double &L2_error_){
 
     char *fname=nullptr;
     fname = new char[100];

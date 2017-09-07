@@ -3,6 +3,8 @@
 #include"SimData.hpp"
 #include"GridData.h"
 #include"FDSolver.hpp"
+#include"FDSolverAdvec.hpp"
+#include"FDSolverAdvecDiffus.hpp"
 #include"ExplicitTimeSolver.hpp"
 
 void InitSim(const int& argc, char** argv);
@@ -59,7 +61,15 @@ void InitSim(const int& argc,char** argv){
         meshdata->set_grid_param(simdata);
         meshdata->generate_grid();
 
-        fd_solver= new FDSolver;
+        // Allocating Solvers:
+        if(simdata.eqn_set=="Advection")
+            fd_solver = new FDSolverAdvec;
+        else if(simdata.eqn_set=="Advection_Diffusion")
+            fd_solver = new FDSolverAdvecDiffus;
+        else
+            _notImplemented("Equation set");
+
+        //fd_solver= new FDSolver;
 
         fd_solver->setup_solver(meshdata,simdata);
 

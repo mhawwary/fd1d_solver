@@ -7,6 +7,8 @@
 
 struct SimData {
 
+    std::string eqn_set;
+
     int  Nelem_ = 1;  // no. of elements in the grid
     double x0_=0.0;
     double xf_=1.0;
@@ -25,6 +27,7 @@ struct SimData {
     int wave_form_ = 0;  // 0: sine wave, 1: Gaussian wave
     double wave_freq_=2.0;  // wave_freq_ x PI
     double Gaussian_exponent_ = -40; // u(x) = exp(-38.6 *x^2)
+    double thermal_diffus=1.0;
 
     int scheme_order_=0;    // FD Scheme order
     int RK_order_=0;        // Runge-Kutta type (0: euler FT, 2: SSPRK22, 3: SSPRK33)
