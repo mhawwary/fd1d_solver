@@ -7,8 +7,8 @@ from numpy import size
 elem_num = [255,511,1023,2047,4095,8191,16383,32767]  # OA4
 #elem_num = [51,102,204,409,819,1638,3276,6553]  # p5
 
-fname = './input/burgers_decay_turb_case_input.in'
-log_name_dir = './Results_AdvecDiffus/Decaying_Burgers_turb/FD4th_RK3_test/case'
+fname = './input/burgers_turb_case_input.in'
+log_name_dir = './Results_AdvecDiffus/Decaying_Burgers_turb/FD4th_RK3/case'
 
 # Computing and Running the first no. of elements :
 #--------------------------------------------------
@@ -17,7 +17,7 @@ for lines in fileinput.input(fname, inplace=True):
     a = lines.split('=')
     b = a[0].strip()
     if b == 'spectrum_restart_flag':
-       print(' {} = {}'.format(a[0].strip(),0))
+       print('   {} = {}'.format(a[0].strip(),0))
     elif b == 'num_elements':
         print(' {} = {}'.format(a[0].strip(),elem_num[0]))
     else:
@@ -77,7 +77,7 @@ for lines in fileinput.input(fname, inplace=True):
     a = lines.split('=')
     b = a[0].strip()
     if b == 'spectrum_restart_flag':
-       print(' {} = {}'.format(a[0].strip(),1))
+       print('   {} = {}'.format(a[0].strip(),1))
     else:
        print(lines.rstrip())
        

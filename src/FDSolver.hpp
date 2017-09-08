@@ -85,6 +85,7 @@ public:
 
    virtual void print_cont_vertex_sol()=0;
    virtual void dump_errors(double &L1_error_, double &L2_error_)=0;
+   virtual void   dump_timeaccurate_sol()=0;
 
 protected:
 

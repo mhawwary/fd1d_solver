@@ -37,6 +37,7 @@ public:
 
    virtual void Compute_exact_sol();
    virtual void Compute_exact_sol_for_plot();
+   virtual void   dump_timeaccurate_sol();
 
 };
 

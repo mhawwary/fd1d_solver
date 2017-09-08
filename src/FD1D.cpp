@@ -33,11 +33,23 @@ int main(int argc, char** argv){
 
     logo();
 
+    clock_t t_start=clock();
+
     InitSim(argc, argv);
 
     RunSim();
 
-    PostProcess();
+    if(simdata.wave_form_==3)
+        fd_solver->print_cont_vertex_sol();
+    else
+        PostProcess();
+
+    printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
+    printf("Final time is: %1.5f\n",fd_solver->GetPhyTime());
+
+    clock_t t_end=clock();
+    cout << "Elapsed Time: " << 1.0*(t_end-t_start)/CLOCKS_PER_SEC
+         << " seconds\n" <<endl;
 
     emptypointer(meshdata);
     emptypointer(fd_solver);
@@ -52,6 +64,9 @@ void InitSim(const int& argc,char** argv){
 
         simdata.Parse(argv[argc-1]);
         simdata.setup_output_directory();
+
+        if(simdata.wave_form_==3) //Burgers Turbulence
+            simdata.prepare_dump_burgers_turb_param();
     }
 
     meshdata = new GridData;
@@ -74,6 +89,7 @@ void InitSim(const int& argc,char** argv){
         fd_solver->setup_solver(meshdata,simdata);
 
         fd_solver->InitSol();
+        fd_solver->dump_timeaccurate_sol();
 
         time_solver = new ExplicitTimeSolver;
 
@@ -88,19 +104,15 @@ void InitSim(const int& argc,char** argv){
         //restart_iter_=0;
 
     } else if(simdata.restart_flag==1){
-
+        printf("\nReading Restart Data\n");
 //        BinaryDataReading();
-
 //        generate_grid();
-
 //        setup_stencil();
-
 //        init_sol_fromFile();
-
 //        iter_init = restart_iter_;
 
     }else {
-        FatalError("Wrong restart flag");
+        FatalError_exit("Wrong restart flag");
     }
 
     return;
@@ -114,43 +126,52 @@ void RunSim(){
     time_solver->setupTimeSolver(fd_solver,&simdata);
 
     double gtime = fd_solver->GetPhyTime();
-
     double dt_= fd_solver->GetTimeStep();
+    int n_iter_print = (int) round( simdata.data_print_time_ / dt_) ;
+    printf("\nNIter to print unsteady data: %d\n",n_iter_print);
 
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());
-
     time_solver->SolveOneStep(fd_solver->GetNumSolution());
-
     time_solver->space_solver->UpdatePhyTime(dt_);
-
     gtime=fd_solver->GetPhyTime();
+
+    if(time_solver->GetIter()%n_iter_print==0){
+        printf("\nIter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+        fd_solver->dump_timeaccurate_sol();
+    }
 
     while ( gtime < simdata.t_end_- 1.05*dt_  ){
 
             time_solver->SolveOneStep(fd_solver->GetNumSolution());
-
             time_solver->space_solver->UpdatePhyTime(dt_);
-
             gtime=fd_solver->GetPhyTime();
 
-            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
-                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
+//            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
+//                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
 
-            if(time_solver->GetIter()%300000==0){
-                cout << "Iter No.:  "<<time_solver->GetIter()
-                     <<"\t Q_max:  "<<Q_max
-                    <<"\t Q_sum:  "<<Q_sum<<endl;
-//                cin.get();
+            if(time_solver->GetIter()%n_iter_print==0){
+                printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+                fd_solver->dump_timeaccurate_sol();
             }
+
+//            if(time_solver->GetIter()%300000==0){
+//                cout << "Iter No.:  "<<time_solver->GetIter()
+//                     <<"\t Q_max:  "<<Q_max
+//                    <<"\t Q_sum:  "<<Q_sum<<endl;
+////                cin.get();
+//            }
     }
 
     // Last iteration:
 
     time_solver->SolveOneStep(fd_solver->GetNumSolution());
-
     time_solver->space_solver->UpdatePhyTime(fd_solver->GetLastTimeStep());
-
     gtime=fd_solver->GetPhyTime();
+
+    if(time_solver->GetIter()%n_iter_print==0){
+        printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+        fd_solver->dump_timeaccurate_sol();
+    }
 
     return;
 }

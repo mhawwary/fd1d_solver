@@ -3,6 +3,7 @@
 
 #include"../include/getpot.h"
 #include"general_tools.h"
+#include"global_var.h"
 
 
 struct SimData {
@@ -22,6 +23,7 @@ struct SimData {
     int restart_flag =0;  //0: start a new simulation; 1: restart a previous simulation
     unsigned int restart_iter_=100;
     std::string Sim_mode;
+    std::string case_no_;  // case no for burgers decay turb
 
     double a_wave_=2;
     int wave_form_ = 0;  // 0: sine wave, 1: Gaussian wave
@@ -42,6 +44,16 @@ struct SimData {
     double Nperiods = 1.0; // no. of periods for simulation
     int end_of_sim_flag_=0;  // 1: use max_iteration as a stopping criteria if not converged or diverged
 
+    // Burger's Tubulence Parameters:
+    std::string turb_prob_type_;
+    int max_wave_no_ = 1024;
+    double max_energy_wave_no_ = 10.0;
+    int* k_wave_no_ =nullptr;
+    double* epsi_phase_=nullptr;
+    double* energy_spect_=nullptr;
+    int spectrum_restart_flag=0;
+    double data_print_time_=0.01;
+
     char* case_postproc_dir=nullptr;  // postprocessing directory
 
     void Parse(const std::string &fname);
@@ -49,6 +61,10 @@ struct SimData {
     void setup_output_directory();
 
     void dump_python_inputfile();
+
+    void prepare_dump_burgers_turb_param();
+
+    void Reset();
 };
 
 #endif

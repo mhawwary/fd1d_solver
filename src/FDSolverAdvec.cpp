@@ -521,6 +521,30 @@ void FDSolverAdvec::print_cont_vertex_sol(){
     return;
 }
 
+void FDSolverAdvec::dump_timeaccurate_sol(){
+
+    register int j=0;
+
+    char *fname=nullptr;
+    fname = new char[250];
+
+    sprintf(fname,"%stime_data/u_num_N%d_dt%1.3e_%1.3ft.dat"
+            ,simdata_->case_postproc_dir
+            ,grid_->Nelem
+            ,time_step
+            ,phy_time);
+
+    FILE* sol_out=fopen(fname,"w");
+
+    for(j=0; j<Nfaces; j++)
+        fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
+
+    fclose(sol_out);
+    emptyarray(fname);
+
+    return;
+}
+
 void FDSolverAdvec::dump_errors(double &L1_error_, double &L2_error_){
 
     char *fname=nullptr;

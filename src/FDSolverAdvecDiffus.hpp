@@ -37,13 +37,15 @@ public:
 
    virtual void Compute_exact_sol();
    virtual void Compute_exact_sol_for_plot();
+   virtual void   dump_timeaccurate_sol();
 
 protected:
-   double evaluate_inviscid_flux(double qn_);
+   double evaluate_inviscid_flux(const double& qn_);
+   double eval_init_u_decay_burger_turb(const double& xx);
 
 protected:
-   double *FD_coeff_2nd;  // coefficients for 2nd derivative
-   int *stencil_index_2nd; // stencil for 2nd derivative
+   double *FD_coeff_2nd=nullptr;  // coefficients for 2nd derivative
+   int *stencil_index_2nd=nullptr; // stencil for 2nd derivative
 
 };
 

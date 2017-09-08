@@ -41,6 +41,97 @@ void SimData::Parse(const std::string &fname){
     Nperiods = gp_input("time_solver/no_of_periods",1.0);
     maxIter_ = gp_input("time_solver/maximum_iteration",1e6);
     end_of_sim_flag_ = gp_input("time_solver/end_of_simulation_flag",1);
+
+    if(wave_form_==3){  // Burger's Turbulence
+        turb_prob_type_
+                = gp_input("wave/Burger_turb/turb_prob_type","Decay_turb_Adams");
+        max_wave_no_ = gp_input("wave/Burger_turb/max_wave_no",1024);
+        max_energy_wave_no_ = gp_input("wave/Burger_turb/ko",10.0);
+        case_no_ = gp_input("Simulation/case_no","00");
+        data_print_time_ = gp_input("wave/Burger_turb/data_print_time",0.01);
+        spectrum_restart_flag = gp_input("wave/Burger_turb/spectrum_restart_flag",0);
+    }
+}
+
+void SimData::prepare_dump_burgers_turb_param(){
+
+    if(spectrum_restart_flag==0){
+        register int i;
+        int n_pts_=max_wave_no_;
+        double A_=0.;
+
+        k_wave_no_ = new int[n_pts_];
+        epsi_phase_ = new double[n_pts_];
+        energy_spect_ = new double[n_pts_];
+
+        // Preparing Random number seeds:
+        //-----------------------------------
+        srand(time(NULL));
+        //std::random_device rd;  //Will be used to obtain a seed for the random number engine
+        //std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+        //std::uniform_real_distribution<> dis(0, 1);
+
+        // Preparing Dump Spectrum Data:
+        //----------------------------------
+        char *fname=nullptr;
+        fname = new char[400];
+        sprintf(fname,"%sspectrum_data_N%d.dat",case_postproc_dir,n_pts_);
+        printf("\nfname_txt_Spect: %s\n",fname);
+        FILE* spect_out_ = fopen(fname,"w");
+
+        for(i=0; i<n_pts_; i++){
+            //epsi_phase_[i] = dis(gen);
+            epsi_phase_[i] = 1.*((double) rand()/(RAND_MAX)) ;
+            k_wave_no_[i] = i+1;
+
+            A_ = 2. * pow(max_energy_wave_no_,-5) / (3. * sqrt(PI) ) ;
+            energy_spect_[i] = A_ * pow(k_wave_no_[i],4)
+                    * exp(-pow((k_wave_no_[i]/max_energy_wave_no_),2)) ;
+
+            fprintf(spect_out_,"%d %2.10e %2.10e\n",k_wave_no_[i]
+                    , epsi_phase_[i], energy_spect_[i]);
+        }
+
+        fclose(spect_out_);
+        emptyarray(fname);
+
+        // Dumping Binary data:
+        fname=new char[400];
+        sprintf(fname,"%sspectrum_binarydata_N%d",case_postproc_dir,n_pts_);
+        printf("\nfname_bin_Spect: %s\n",fname);
+        FILE*  b_spect_out_=fopen(fname,"wb");
+
+        fwrite(&max_wave_no_,sizeof(int),1,b_spect_out_);
+        fwrite(k_wave_no_,sizeof(int),n_pts_,b_spect_out_);
+        fwrite(epsi_phase_,sizeof(double),n_pts_,b_spect_out_);
+        fwrite(energy_spect_,sizeof(double),n_pts_,b_spect_out_);
+
+        fclose(b_spect_out_);
+        emptyarray(fname);
+
+    }else if(spectrum_restart_flag==1){
+        // Reading Binary data:
+        char *fname=nullptr;
+        fname=new char[400];
+        sprintf(fname,"%sspectrum_binarydata_N%d",case_postproc_dir,max_wave_no_);
+        FILE*  b_spect_in_=fopen(fname,"rb");
+
+        k_wave_no_ = new int[max_wave_no_];
+        epsi_phase_ = new double[max_wave_no_];
+        energy_spect_ = new double[max_wave_no_];
+
+        fread(&max_wave_no_,sizeof(int),1,b_spect_in_);
+        fread(k_wave_no_,sizeof(int),max_wave_no_,b_spect_in_);
+        fread(epsi_phase_,sizeof(double),max_wave_no_,b_spect_in_);
+        fread(energy_spect_,sizeof(double),max_wave_no_,b_spect_in_);
+
+        fclose(b_spect_in_);
+        emptyarray(fname);
+    }else{
+        FatalError_exit("spectrum restart flag error");
+    }
+
+    return;
 }
 
 void SimData::setup_output_directory(){
@@ -53,7 +144,7 @@ void SimData::setup_output_directory(){
 
     struct stat statbuf;
 
-    case_postproc_dir =new char[300];
+    case_postproc_dir =new char[350];
 
     char *case_dir=nullptr,*case_title=nullptr;
     case_dir=new char[70];
@@ -135,11 +226,26 @@ void SimData::setup_output_directory(){
         if(test0==-1) FatalError_exit("Change directory to ./Results/case_dir failed");
     }
 
-    sprintf(case_postproc_dir,"./Results/%s/%s/",case_title,case_dir);
+    if(wave_form_==3){  // burgers decay turb
+        chdir(case_dir);
+        char *case_no_t = nullptr;
+        case_no_t = new char[100];
+        sprintf(case_no_t,"case%s",case_no_.c_str());
+        mkdir(case_no_t,0777);
+        chdir(case_no_t);
+        sprintf(case_no_t,"%s/case%s",case_dir,case_no_.c_str());
+        sprintf(case_postproc_dir,"%s/%s/%s/",main_dir,case_title,case_no_t);
+        emptyarray(case_no_t);
+    }else{
+        sprintf(case_postproc_dir,"%s/%s/%s/",main_dir,case_title,case_dir);
+        chdir(case_dir);
+    }
+
+    //sprintf(case_postproc_dir,"./%s/%s/%s/",main_dir,case_title,case_dir);
 
     mkdir("./nodal",0777);
     mkdir("./errors",0777);
-    //mkdir("./BINARY",0777);
+    mkdir("./time_data",0777);
 
     cout<<"\nCurrnet working directory: "<<current_working_dir<<endl;
     cout<<"Post processing directory: "<<case_postproc_dir<<endl;
@@ -180,6 +286,15 @@ void SimData::dump_python_inputfile(){
 
     fclose(python_out);
     emptyarray(fname);
+
+    return;
+}
+
+void SimData::Reset(){
+
+    emptyarray(k_wave_no_);
+    emptyarray(epsi_phase_);
+    emptyarray(energy_spect_);
 
     return;
 }

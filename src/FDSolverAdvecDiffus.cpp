@@ -107,6 +107,7 @@ void FDSolverAdvecDiffus::Reset_solver(){
 
     emptyarray(stencil_index_2nd);
     emptyarray(FD_coeff_2nd);
+    simdata_->Reset();
 
     return;
 }
@@ -192,6 +193,7 @@ void FDSolverAdvecDiffus::setup_stencil(){
         stencil_index_2nd[3] = stencil_index[3];
         stencil_index_2nd[4] = stencil_index[4];
         stencil_index_2nd[5] = stencil_index[5];
+        stencil_index_2nd[6] = stencil_index[6];
 
         FD_coeff [0] =   1.0/6.0;
         FD_coeff [1] =  -0.15;
@@ -290,7 +292,10 @@ void FDSolverAdvecDiffus::InitSol(){
 
         for(k=0; k<Ndof; k++){
 
-            Q_init[j][k] = eval_init_sol(grid_->X[j]);
+            if(simdata_->wave_form_==3)
+                Q_init[j][k] =eval_init_u_decay_burger_turb(grid_->X[j]);
+            else
+                Q_init[j][k] = eval_init_sol(grid_->X[j]);
 
             Qn[j+Nghost_l][k] = Q_init[j][k];
         }
@@ -369,12 +374,14 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
     return;
 }
 
-double FDSolverAdvecDiffus::evaluate_inviscid_flux(double qn_){
+double FDSolverAdvecDiffus::evaluate_inviscid_flux(const double& qn_){
 
     if(simdata_->wave_form_==2 || simdata_->wave_form_==3){ // Burgers equation
-        return 0.5 *qn_*qn_;
+        return (0.5 *qn_*qn_);
     }else if(simdata_->wave_form_==0 || simdata_->wave_form_==1){
-        return qn_*simdata_->a_wave_;
+        return (qn_*simdata_->a_wave_);
+    }else{
+        return 0.0;
     }
 }
 
@@ -406,6 +413,14 @@ void FDSolverAdvecDiffus::Compute_exact_sol_for_plot(){
 
             xx = grid_->x_exact_ppts[j]- exact_sol_shift;
             Q_exact_pp[j][0] = eval_init_sol(xx);
+       }
+
+    }else if(simdata_->wave_form_==3){
+
+       for(j=0; j<grid_->N_exact_ppts; j++){
+
+            xx = grid_->x_exact_ppts[j]- exact_sol_shift;
+            Q_exact_pp[j][0] = eval_init_u_decay_burger_turb(xx);
        }
 
     }
@@ -443,6 +458,14 @@ void FDSolverAdvecDiffus::Compute_exact_sol(){
             Q_exact[j][0] = eval_init_sol(xx);
        }
 
+    }else if(simdata_->wave_form_==3){
+
+       for(j=0; j<Nfaces; j++){
+
+            xx = grid_->X[j]- exact_sol_shift;
+            Q_exact[j][0] = eval_init_u_decay_burger_turb(xx);
+       }
+
     }
 
     return;
@@ -461,6 +484,25 @@ double FDSolverAdvecDiffus::eval_init_sol(const double& xx){
     }else{
         _notImplemented("Wave form is not implemented");
     }
+}
+
+double FDSolverAdvecDiffus::eval_init_u_decay_burger_turb(const double& xx_){
+
+    register int i;
+    double u_=0.;
+    double dk_,k_max_, E_, k_, epsi_;
+    k_max_ = simdata_->max_wave_no_;
+    dk_ = 1.0;
+    int n_pts_=k_max_/dk_;
+
+    for(i=0; i<n_pts_; i++){
+        k_ = simdata_->k_wave_no_[i];
+        epsi_= simdata_->epsi_phase_[i];
+        E_= simdata_->energy_spect_[i];
+        u_ += sqrt(2.*E_ ) * cos (k_ * xx_ + 2.*PI*epsi_) ;
+    }
+
+    return u_;
 }
 
 double FDSolverAdvecDiffus::L1_error_nodal_sol(){
@@ -496,7 +538,7 @@ void FDSolverAdvecDiffus::print_cont_vertex_sol(){
     register int j=0;
 
     char *fname=nullptr;
-    fname = new char[100];
+    fname = new char[150];
 
     if(simdata_->Sim_mode=="dt_const"){
 
@@ -532,7 +574,7 @@ void FDSolverAdvecDiffus::print_cont_vertex_sol(){
         emptyarray(fname);
     }
 
-    fname = new char[100];
+    fname = new char[150];
 
     sprintf(fname,"%snodal/u_exact_%1.3fT.dat"
             ,simdata_->case_postproc_dir
@@ -550,10 +592,33 @@ void FDSolverAdvecDiffus::print_cont_vertex_sol(){
     return;
 }
 
+void FDSolverAdvecDiffus::dump_timeaccurate_sol(){
+
+    register int j=0;
+
+    char *fname=nullptr;
+    fname = new char[400];
+    sprintf(fname,"%stime_data/u_num_N%d_dt%1.3e_%1.3ft.dat"
+            ,simdata_->case_postproc_dir
+            ,grid_->Nelem
+            ,time_step
+            ,phy_time);
+
+    FILE* sol_out=fopen(fname,"w");
+
+    for(j=0; j<Nfaces; j++)
+        fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
+
+    fclose(sol_out);
+    emptyarray(fname);
+
+    return;
+}
+
 void FDSolverAdvecDiffus::dump_errors(double &L1_error_, double &L2_error_){
 
     char *fname=nullptr;
-    fname = new char[100];
+    fname = new char[150];
 
     if(simdata_->Sim_mode=="CFL_const"){
 
