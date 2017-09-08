@@ -101,6 +101,6 @@ clean:
 clean_results:
 	rm -rf ./Results/ 
 
-plot_test:
-	python FDplot_test.py -f ./input/python_input.in
+plot:
+	python python_tools/FDplot_test.py -f ./input/python_input.in
 
