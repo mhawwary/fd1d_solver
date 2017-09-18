@@ -138,6 +138,8 @@ protected:
    int Nghost_r=1; // ghost points at the left and right interfaces
    int Nfaces_tot=1;
 
+   double max_eigen_advec=0.0; // maximum eigenvalue for adevction
+
 };
 
 #endif

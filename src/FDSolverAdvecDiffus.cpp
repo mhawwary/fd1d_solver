@@ -70,27 +70,10 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
     setup_stencil();
 
     SetPhyTime(simdata_->t_init_);
-    CalcTimeStep();
+    //CalcTimeStep();
     ComputeExactSolShift();
     Compute_exact_sol();
     Compute_exact_sol_for_plot();
-
-    // Screen Output of input and simulation parameters:
-    cout <<"\n===============================================\n";
-    cout << "CFL no.        : "<<CFL<<endl;
-    cout << "time step, dt  : "<<time_step<<endl;
-    cout << "last_time_step: "<<last_time_step<<endl;
-    cout << "input Nperiods : "<<simdata_->Nperiods<<endl;
-    cout << "new   Nperiods : "<<simdata_->t_end_/T_period<<endl;
-    cout << "exact_sol_shift: "<<exact_sol_shift<<endl;
-    cout << "T_period       : "<<T_period<<endl;
-    printf("actual_end_time:%1.2f",simdata_->t_end_);
-    cout <<"\nMax_iter: "<<simdata_->maxIter_<<endl;
-
-    cout << "\nNumber of nodes: "<< grid_->Nfaces<<"  dx:  "<<grid_->dx<<endl;
-    cout << "Scheme  order : "<< simdata_->scheme_order_  << endl;
-    cout << "Runge-Kutta order : "<< simdata_->RK_order_    << endl;
-    cout <<"===============================================\n";
 
     return;
 }
@@ -217,12 +200,26 @@ void FDSolverAdvecDiffus::setup_stencil(){
 
 void FDSolverAdvecDiffus::CalcTimeStep(){
 
+    double dx = grid_->dx;
+    double dx2 = pow(dx,2);
+    double radius_advec_=0.0, radius_diffus_ =0.0;
+
     T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
+    radius_advec_ =  max_eigen_advec / dx  ;
+    radius_diffus_ = simdata_->thermal_diffus / dx2 ;
 
     if(simdata_->calc_dt_flag==1){
 
         CFL = simdata_->CFL_;
-        time_step = (grid_->dx * CFL )/ simdata_->a_wave_;
+        if(simdata_->calc_dt_adv_diffus_flag==0)   // based on advection effect only
+            time_step = CFL / radius_advec_ ;
+        else if(simdata_->calc_dt_adv_diffus_flag==1)  // based on diffusion effect only
+            time_step = CFL /  radius_diffus_ ;
+        else if(simdata_->calc_dt_adv_diffus_flag==2)  // based on combined advection and diffusion effects
+            time_step = CFL / ( radius_advec_ + radius_diffus_ );
+        else
+            FatalError_exit("Wrong Calc dt adv diffus flag");
+
         last_time_step = time_step;
         simdata_->dt_ = time_step;
 
@@ -230,7 +227,16 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
 
         time_step = simdata_->dt_;
         last_time_step = time_step;
-        CFL = simdata_->a_wave_ * time_step / grid_->dx ;
+
+        if(simdata_->calc_dt_adv_diffus_flag==0)
+            CFL = time_step * radius_advec_ ;
+        else if(simdata_->calc_dt_adv_diffus_flag==1)
+            CFL = time_step * radius_diffus_ ;
+        else if(simdata_->calc_dt_adv_diffus_flag==2)
+            CFL = time_step * ( radius_advec_ + radius_diffus_ );
+        else
+            FatalError_exit("Wrong Calc dt adv diffus flag");
+
         simdata_->CFL_ = CFL;
 
     }else {
@@ -265,7 +271,7 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
 
             last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
 
-        }else if((simdata_->maxIter_ * time_step) < (simdata_->Nperiods * T_period) ){
+        }else if((simdata_->maxIter_ * time_step) < simdata_->t_end_ ){
 
             last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
         }
@@ -279,6 +285,24 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
         FatalError_exit("Wrong end_of_simulation_flag");
     }
 
+    // Screen Output of input and simulation parameters:
+    cout <<"\n===============================================\n";
+    cout << "max eigenvalue : "<<max_eigen_advec<<endl;
+    cout << "CFL no.        : "<<CFL<<endl;
+    cout << "time step, dt  : "<<time_step<<endl;
+    cout << "last_time_step : "<<last_time_step<<endl;
+    cout << "input Nperiods : "<<simdata_->Nperiods<<endl;
+    cout << "new   Nperiods : "<<simdata_->t_end_/T_period<<endl;
+    cout << "exact_sol_shift: "<<exact_sol_shift<<endl;
+    cout << "T_period       : "<<T_period<<endl;
+    printf("actual_end_time:%1.2f",simdata_->t_end_);
+    cout <<"\nMax_iter      : "<<simdata_->maxIter_<<endl;
+
+    cout << "\nNumber of nodes: "<< grid_->Nfaces<<"  dx:  "<<grid_->dx<<endl;
+    cout << "Scheme  order    : "<< simdata_->scheme_order_  << endl;
+    cout << "Runge-Kutta order: "<< simdata_->RK_order_    << endl;
+    cout <<"===============================================\n";
+
     return;
 }
 
@@ -288,18 +312,30 @@ void FDSolverAdvecDiffus::InitSol(){
 
     int k=0;
 
+    max_eigen_advec = 0.0;
+
     for(j=0; j<Nfaces; j++){
 
         for(k=0; k<Ndof; k++){
 
-            if(simdata_->wave_form_==3)
+            if(simdata_->wave_form_==3){
                 Q_init[j][k] =eval_init_u_decay_burger_turb(grid_->X[j]);
-            else
+                if(fabs(Q_init[j][k])>max_eigen_advec) max_eigen_advec = fabs(Q_init[j][k]);
+            }
+            else{
                 Q_init[j][k] = eval_init_sol(grid_->X[j]);
+                if(simdata_->wave_form_==2){
+                    if(fabs(Q_init[j][k])>max_eigen_advec) max_eigen_advec = fabs(Q_init[j][k]);
+                }else{
+                    max_eigen_advec=simdata_->a_wave_;
+                }
+            }
 
             Qn[j+Nghost_l][k] = Q_init[j][k];
         }
     }
+
+    CalcTimeStep();
 
     return;
 }
@@ -502,7 +538,7 @@ double FDSolverAdvecDiffus::eval_init_u_decay_burger_turb(const double& xx_){
         u_ += sqrt(2.*E_ ) * cos (k_ * xx_ + 2.*PI*epsi_) ;
     }
 
-    return u_;
+    return (u_ + simdata_->velocity_mean_);
 }
 
 double FDSolverAdvecDiffus::L1_error_nodal_sol(){
@@ -598,11 +634,19 @@ void FDSolverAdvecDiffus::dump_timeaccurate_sol(){
 
     char *fname=nullptr;
     fname = new char[400];
-    sprintf(fname,"%stime_data/u_num_N%d_dt%1.3e_%1.3ft.dat"
-            ,simdata_->case_postproc_dir
-            ,grid_->Nelem
-            ,time_step
-            ,phy_time);
+    if(simdata_->Sim_mode=="CFL_const"){
+        sprintf(fname,"%stime_data/u_num_N%d_CFL%1.4f_%1.3ft.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,CFL
+                ,phy_time);
+    }else{
+        sprintf(fname,"%stime_data/u_num_N%d_dt%1.3e_%1.3ft.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,time_step
+                ,phy_time);
+    }
 
     FILE* sol_out=fopen(fname,"w");
 

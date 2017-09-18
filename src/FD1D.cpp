@@ -39,9 +39,7 @@ int main(int argc, char** argv){
 
     RunSim();
 
-    if(simdata.wave_form_==3)
-        fd_solver->print_cont_vertex_sol();
-    else
+    if(simdata.wave_form_!=3)
         PostProcess();
 
     printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
@@ -84,23 +82,16 @@ void InitSim(const int& argc,char** argv){
         else
             _notImplemented("Equation set");
 
-        //fd_solver= new FDSolver;
-
         fd_solver->setup_solver(meshdata,simdata);
-
         fd_solver->InitSol();
         fd_solver->dump_timeaccurate_sol();
-
         time_solver = new ExplicitTimeSolver;
-
+        time_solver->setupTimeSolver(fd_solver,&simdata);
         simdata.dump_python_inputfile();
 
         //setup_stencil();
-
         //init_solution();
-
         //iter_init = 0;
-
         //restart_iter_=0;
 
     } else if(simdata.restart_flag==1){
@@ -120,16 +111,23 @@ void InitSim(const int& argc,char** argv){
 
 void RunSim(){
 
-    int check_div_=0,check_conv_=0;
-    double Q_max=20.0,Q_sum=0.0;
-
-    time_solver->setupTimeSolver(fd_solver,&simdata);
+    int n_iter_print;
+    //int check_div_=0,check_conv_=0;
+    //double Q_max=20.0,Q_sum=0.0;
 
     double gtime = fd_solver->GetPhyTime();
     double dt_= fd_solver->GetTimeStep();
-    int n_iter_print = (int) round( simdata.data_print_time_ / dt_) ;
-    printf("\nNIter to print unsteady data: %d\n",n_iter_print);
 
+    if(simdata.unsteady_data_print_flag_==0)
+        n_iter_print = simdata.unsteady_data_print_iter_;
+    else if(simdata.unsteady_data_print_flag_==1)
+        n_iter_print= (int) round( simdata.unsteady_data_print_time_/ dt_) ;
+    else
+        FatalError_exit("unsteady data print flag error");
+
+    printf("\nn_print_Iter: %d\n",n_iter_print);
+
+    // First Solve:
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());
     time_solver->SolveOneStep(fd_solver->GetNumSolution());
     time_solver->space_solver->UpdatePhyTime(dt_);
@@ -140,7 +138,8 @@ void RunSim(){
         fd_solver->dump_timeaccurate_sol();
     }
 
-    while ( gtime < simdata.t_end_- 1.05*dt_  ){
+    // main solution loop:
+    while ( gtime < simdata.t_end_- 1.01*dt_  ){
 
             time_solver->SolveOneStep(fd_solver->GetNumSolution());
             time_solver->space_solver->UpdatePhyTime(dt_);
@@ -168,10 +167,8 @@ void RunSim(){
     time_solver->space_solver->UpdatePhyTime(fd_solver->GetLastTimeStep());
     gtime=fd_solver->GetPhyTime();
 
-    if(time_solver->GetIter()%n_iter_print==0){
-        printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
-        fd_solver->dump_timeaccurate_sol();
-    }
+    printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+    fd_solver->dump_timeaccurate_sol();
 
     return;
 }
@@ -221,18 +218,12 @@ void check_divergence(int& check_div_, int& check_conv_,const double& threshold
 
 void check_convergence(int& check_conv_, double& Q_sum){
 
-//    register int i,j;
-
+    register int i,j;
 //    Q_sum = 0.0;
-
 //    for(i=Nghost_l; i<Nfaces; i++){
-
 //        Q_sum+= fabs(Qn[i]);
 //    }
-
 //    if(Q_sum <= 1e-10) check_conv_=1;
-
-
     return;
 }
 
