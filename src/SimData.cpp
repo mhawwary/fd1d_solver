@@ -137,8 +137,8 @@ void SimData::prepare_dump_burgers_turb_param(){
         fname=new char[400];
         sprintf(fname,"%sspectrum_binarydata_N%d",case_postproc_dir,max_wave_no_);
         struct stat statbuf;
-        stat(fname, &statbuf);   // check if the binary file exist
-        if(!S_ISDIR(statbuf.st_mode)){
+        // check if the binary file exist
+        if(stat(fname, &statbuf) ==-1){
             FatalError_exit("Spectrum Binary file does not exist");
         }else{
             FILE*  b_spect_in_=fopen(fname,"rb");
