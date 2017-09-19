@@ -17,7 +17,7 @@ for lines in fileinput.input(fname, inplace=True):
     a = lines.split('=')
     b = a[0].strip()
     if b == 'spectrum_restart_flag':
-       print('   {} = {}'.format(a[0].strip(),0))
+       print('   {} = {}'.format(a[0].strip(),1))
     elif b == 'num_elements':
         print(' {} = {}'.format(a[0].strip(),elem_num[0]))
     else:

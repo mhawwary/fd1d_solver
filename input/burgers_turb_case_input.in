@@ -36,7 +36,7 @@
    turb_prob_type = Decay_turb_omerSan   # Decay_turb_Adams, Decay_turb_Yanan, forced_turb_Sherwin
    max_wave_no = 2048 
    ko = 10
-   spectrum_restart_flag = 0  # 0: compute new spectrum, 1: load spectrum     
+   spectrum_restart_flag = 1  # 0: compute new spectrum, 1: load spectrum     
    velocity_mean = 10.0  #  u(x) = sum(E(k) *cos(k))+ u_mean
 
 [space_solver]
