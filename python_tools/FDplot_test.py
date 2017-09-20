@@ -8,7 +8,8 @@ import csv
 
 parser = argparse.ArgumentParser(description='python_FD_argument_parsing');
 
-parser.add_argument('-f', type=str, dest='python_input');
+parser.add_argument('-f', type=str, dest='python_input')
+parser.add_argument('-t', type=str, dest='time_for_plot');
 
 args = parser.parse_args();
 
@@ -17,47 +18,73 @@ with open(args.python_input) as file:
     reader=csv.reader(file, delimiter=':');
 
     for row in reader:
-        if row[0]=='mode':
+        if row[0] =='dir_result':    
+            dir_result = str(row[1])
+        elif row[0] =='dir':    
+            dir_input = str(row[1])
+        elif row[0] =='errors':   
+            errors_dir = str(row[1])
+        elif row[0] == 'exact':
+            exact_sol_dir = str(row[1])
+        elif row[0] == 'numerical':
+            num_sol_dir = str(row[1])
+        elif row[0] =='unsteady_num':   
+            sol_dir = str(row[1])
+        elif row[0]=='Eqn_set':
+            eqn_set=str(row[1]);
+        elif row[0]=='Eqn_type':
+            eqn_type=str(row[1]);
+        elif row[0]=='wave_form':
+            wave_form=str(row[1]);
+        elif row[0]=='mode':
             mode=str(row[1]);
-        elif row[0]=='CFL':    
-            CFL=Decimal(row[1]);
         elif row[0]=='FDOA':
-            FD=str(row[1]);
+            FD=str(row[1])
+            if int(FD)==2:
+               FDOA = FD + str('nd')
+            elif int(FD)==3:
+               FDOA = FD + str('rd')
+            else:
+               FDOA = FD + str('th')
         elif row[0] == 'RK':    
             RK=str(row[1]);
         elif row[0] == 'Nelem':    
             Nelem=str(int(row[1]));
         elif row[0] == 'Nexact':    
             Nexact=str(int(row[1]));
-        elif row[0]=='dt':
+        elif row[0]=='CFL':
+            CFL=Decimal(row[1])
+        elif row[0] == 'dt':
             dt_=str(row[1]);
+        elif row[0] == 't_end':
+            t_end=str(row[1]);
         elif row[0] == 'T':     
-            T=Decimal(row[1]);
-        elif row[0] =='dir':    
-            dir1 = str(row[1]);
-        elif row[0] == 'exact': 
-            sol_exact = str(row[1]);
-        elif row[0] == 'numerical': 
-            sol_comp = str(row[1]);
+            T=Decimal(row[1]);       
 
-CFL=Decimal(CFL.quantize(Decimal('.001')));
+CFL=Decimal(CFL.quantize(Decimal('.0001')));
 T=Decimal(T.quantize(Decimal('.001')));
 dt = float(dt_);
 
-fname_exact = dir1+sol_exact+"_"+str(T)+str("T.dat");
-data_exact= loadtxt(fname_exact);
+tt_   = Decimal(args.time_for_plot)
+tt_ =  Decimal(tt_.quantize(Decimal('.001')))
+
+#fname_exact = dir1+sol_exact+"_"+str(T)+str("T.dat");
+#data_exact= loadtxt(fname_exact);
 
 if mode=='dt_const':
-	fname_comp = dir1+sol_comp+str("_N")+Nelem\
-	+str("_dt")+dt_+str("_")+str(T)+str("T.dat");
-	data_num= loadtxt(fname_comp);
+    mm_name = str('_dt') + dt_
+    m_name = str('dt=') + dt_
 else:
-	fname_comp = dir1+sol_comp+str("_N")+Nelem\
-	+str("_CFL")+str(CFL)+str("_")+str(T)+str("T.dat");
-	data_num= loadtxt(fname_comp);
+    mm_name = str('_CFL') + str(CFL)
+    m_name = str('CFL=') + str(CFL)
+	
+fname_comp = dir_input+sol_dir+str('_N')+Nelem\
+	+mm_name+str('_')+str(tt_)+str('t.dat');
 
-x_exact = data_exact[:,0]; 
-u_exact = data_exact[:,1]; 
+data_num= loadtxt(fname_comp);
+
+#x_exact = data_exact[:,0]; 
+#u_exact = data_exact[:,1]; 
 
 x_num = data_num[:,0];
 u_num = data_num[:,1];
@@ -80,12 +107,12 @@ fig = pyplot.figure();
 
 ylim_0 = list();
 ylim_1 = list();
-ylim_0.append(min(u_exact));
-ylim_1.append(max(u_exact));
+#ylim_0.append(min(u_exact));
+#ylim_1.append(max(u_exact));
 ylim_0.append(min(u_num));
 ylim_1.append(max(u_num));
 
-pyplot.plot(x_exact,u_exact,'--k',label='Initial data'); 
+#pyplot.plot(x_exact,u_exact,'--k',label='Initial data'); 
 pyplot.plot(x_num,u_num,'-r',label='Numerical sol'); 
 
 pyplot.legend();
