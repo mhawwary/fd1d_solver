@@ -11,8 +11,17 @@ public:
     void ComputeInitialResid(double **qn_);
 
     int GetIter(){
-
         return IterNo;
+    }
+
+    void Set_time_step(const double& dt_set){
+        dt_ = dt_set;
+        return;
+    }
+
+    void Reset_iter(const double& iter_reset){
+        IterNo = iter_reset;
+        return;
     }
 
 public:

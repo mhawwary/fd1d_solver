@@ -112,45 +112,65 @@ void InitSim(const int& argc,char** argv){
 void RunSim(){
 
     int n_iter_print;
+    int local_iter=0;
+    double dt_last_print=0.0;
     //int check_div_=0,check_conv_=0;
     //double Q_max=20.0,Q_sum=0.0;
 
     double gtime = fd_solver->GetPhyTime();
     double dt_= fd_solver->GetTimeStep();
 
-    if(simdata.unsteady_data_print_flag_==0)
+    if(simdata.unsteady_data_print_flag_==0){        // use iter no. to print
         n_iter_print = simdata.unsteady_data_print_iter_;
-    else if(simdata.unsteady_data_print_flag_==1)
+        dt_last_print = dt_;
+        n_iter_print--;
+    }else if(simdata.unsteady_data_print_flag_==1){   // use time point to print
         n_iter_print= (int) round( simdata.unsteady_data_print_time_/ dt_) ;
-    else
+        if((n_iter_print*dt_) > simdata.unsteady_data_print_time_ ){
+            dt_last_print = simdata.unsteady_data_print_time_ - ((n_iter_print-1) * dt_);
+            n_iter_print--;
+        }else if((n_iter_print*dt_) < simdata.unsteady_data_print_time_ ){
+            dt_last_print = simdata.unsteady_data_print_time_ - (n_iter_print*dt_);
+        }
+    }else{
         FatalError_exit("unsteady data print flag error");
+    }
 
-    printf("\nn_print_Iter: %d\n",n_iter_print);
+    printf("\nnIter to print unsteady data: %d, dt_last: %1.5e"
+           ,n_iter_print, dt_last_print);
 
     // First Solve:
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());
     time_solver->SolveOneStep(fd_solver->GetNumSolution());
     time_solver->space_solver->UpdatePhyTime(dt_);
     gtime=fd_solver->GetPhyTime();
+    local_iter++;
 
     if(time_solver->GetIter()%n_iter_print==0){
-        printf("\nIter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+        printf("\nIter No:%d, time: %1.5f\n",time_solver->GetIter(),gtime);
         fd_solver->dump_timeaccurate_sol();
     }
 
     // main solution loop:
-    while ( gtime < simdata.t_end_- 1.01*dt_  ){
+    while ( gtime < (simdata.t_end_-1e-11)  ){
 
             time_solver->SolveOneStep(fd_solver->GetNumSolution());
             time_solver->space_solver->UpdatePhyTime(dt_);
             gtime=fd_solver->GetPhyTime();
+            local_iter++;
 
 //            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
 //                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
 
-            if(time_solver->GetIter()%n_iter_print==0){
-                printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+            if(local_iter%n_iter_print==0){
+                time_solver->Set_time_step(dt_last_print);
+                time_solver->SolveOneStep(fd_solver->GetNumSolution());
+                time_solver->space_solver->UpdatePhyTime(dt_last_print);
+                gtime=fd_solver->GetPhyTime();
+                printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
                 fd_solver->dump_timeaccurate_sol();
+                time_solver->Set_time_step(dt_);
+                local_iter=0;
             }
 
 //            if(time_solver->GetIter()%300000==0){
@@ -163,12 +183,12 @@ void RunSim(){
 
     // Last iteration:
 
-    time_solver->SolveOneStep(fd_solver->GetNumSolution());
-    time_solver->space_solver->UpdatePhyTime(fd_solver->GetLastTimeStep());
-    gtime=fd_solver->GetPhyTime();
+//    time_solver->SolveOneStep(fd_solver->GetNumSolution());
+//    time_solver->space_solver->UpdatePhyTime(fd_solver->GetLastTimeStep());
+//    gtime=fd_solver->GetPhyTime();
 
-    printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
-    fd_solver->dump_timeaccurate_sol();
+//    printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
+//    fd_solver->dump_timeaccurate_sol();
 
     return;
 }

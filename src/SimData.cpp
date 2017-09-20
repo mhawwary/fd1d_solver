@@ -308,7 +308,7 @@ void SimData::dump_python_inputfile(){
     fprintf(python_out,"RK:%d\n",RK_order_);
     fprintf(python_out,"Nelem:%d\n",Nelem_);
     fprintf(python_out,"Nexact:%d\n",N_exact_ppts);
-    fprintf(python_out,"CFL:%1.3f\n",CFL_);
+    fprintf(python_out,"CFL:%1.4f\n",CFL_);
     fprintf(python_out,"dt:%1.3e\n",dt_);
     fprintf(python_out,"t_end:%1.3e\n",t_end_);
     fprintf(python_out,"T:%1.3f\n",Nperiods);
