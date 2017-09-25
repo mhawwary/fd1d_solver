@@ -24,7 +24,7 @@ public:
    virtual void print_cont_vertex_sol();
    virtual void dump_errors(double &L1_error_, double &L2_error_);
 
-   virtual void setup_stencil();
+   virtual void setup_coefficients();
 
    virtual void update_ghost_sol(double **Qn_);
 

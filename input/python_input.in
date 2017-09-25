@@ -1,4 +1,4 @@
-dir:Results_AdvecDiffus/decay_burg_turb1/FD4th_RK3_test/case00/
+dir:Results_AdvecDiffus/decay_burg_turb2/cFD4th_RK3/case10/
 errors:errors/errors
 exact:nodal/u_exact
 numerical:nodal/u_num
@@ -6,12 +6,13 @@ unsteady_num:time_data/u_num
 Eqn_set:Advection_Diffusion
 Eqn_type:visc_burger
 wave_form:Decaying_Burgers_turb
-mode:test
+mode:dt_const
+scheme_type:implicit
 FDOA:4
 RK:3
 Nelem:1023
 Nexact:100
-CFL:0.185
-dt:1.000e-04
-t_end:1.000e-01
-T:0.016
+CFL:0.0185
+dt:1.000e-05
+t_end:0.200
+T:0.032

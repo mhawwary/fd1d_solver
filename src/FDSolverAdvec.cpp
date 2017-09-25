@@ -67,7 +67,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     for(i=0; i<grid_->N_exact_ppts; i++)
         Q_exact_pp[i] = new double [Ndof];
 
-    setup_stencil();
+    setup_coefficients();
 
     SetPhyTime(simdata_->t_init_);
     CalcTimeStep();
@@ -111,7 +111,7 @@ void FDSolverAdvec::Reset_solver(){
 // Solver functions
 //-------------------------------------------
 
-void FDSolverAdvec::setup_stencil(){
+void FDSolverAdvec::setup_coefficients(){
 
     stencil_index = new int[scheme_order_+1];
     FD_coeff = new double [scheme_order_+1];

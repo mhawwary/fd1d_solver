@@ -18,33 +18,49 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
 
     Nfaces = grid_->Nfaces;
 
+    scheme_type_ = simdata_->scheme_type_;
     scheme_order_ = simdata_->scheme_order_;
+    filter_type_ = simdata_->filter_type_;
+    filter_order_ = simdata_->filter_order_;
+    filter_activate_flag = simdata_->filter_activate_flag_;
 
-    if(scheme_order_==1){
-        Nghost_l = 1;
-        Nghost_r=0;
-
-    }else if(scheme_order_==2){
-        Nghost_l=1;
-        Nghost_r=1;
-
-    }else if(scheme_order_==3){
-
-        if(simdata_->upwind_biased_==1){
-            Nghost_l=2;
-            Nghost_r=1;
-        }else if(simdata_->upwind_biased_==0){
-            Nghost_l=3;
+    if(scheme_type_=="explicit"){
+        if(scheme_order_==1){
+            Nghost_l = 1;
             Nghost_r=0;
+
+        }else if(scheme_order_==2){
+            Nghost_l=1;
+            Nghost_r=1;
+
+        }else if(scheme_order_==3){
+
+            if(simdata_->upwind_biased_==1){
+                Nghost_l=2;
+                Nghost_r=1;
+            }else if(simdata_->upwind_biased_==0){
+                Nghost_l=3;
+                Nghost_r=0;
+            }
+
+        }else if(scheme_order_==4){
+            Nghost_l=2;
+            Nghost_r=2;
+
+        }else if(scheme_order_==6){
+            Nghost_l=3;
+            Nghost_r=3;
         }
 
-    }else if(scheme_order_==4){
-        Nghost_l=2;
-        Nghost_r=2;
+    }else if(scheme_type_=="implicit"){
+        if(scheme_order_==4){
+            Nghost_l=1;
+            Nghost_r=1;
 
-    }else if(scheme_order_==6){
-        Nghost_l=3;
-        Nghost_r=3;
+        }else if(scheme_order_==6){
+            Nghost_l=2;
+            Nghost_r=2;
+        }
     }
 
     Nfaces_tot = Nghost_l + Nfaces + Nghost_r;
@@ -67,7 +83,7 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
     for(i=0; i<grid_->N_exact_ppts; i++)
         Q_exact_pp[i] = new double [Ndof];
 
-    setup_stencil();
+    setup_coefficients();
 
     SetPhyTime(simdata_->t_init_);
     //CalcTimeStep();
@@ -92,107 +108,177 @@ void FDSolverAdvecDiffus::Reset_solver(){
     emptyarray(FD_coeff_2nd);
     simdata_->Reset();
 
+    emptyarray(dfdx_);
+    emptyarray(df2dx2_);
+    emptyarray(alpha_vec_f1_);
+    emptyarray(alpha_vec_f2_);
+    emptyarray(b_vec_);
+    emptyarray(RHS_f1_);
+    emptyarray(RHS_f2_);
+
     return;
 }
 
 // Solver functions
 //-------------------------------------------
 
-void FDSolverAdvecDiffus::setup_stencil(){
+void FDSolverAdvecDiffus::setup_coefficients(){
 
-    stencil_index = new int[scheme_order_+1];
-    FD_coeff = new double [scheme_order_+1];
+    if(scheme_type_ == "explicit"){
+        stencil_index = new int[scheme_order_+1];
+        FD_coeff = new double [scheme_order_+1];
 
-    stencil_index_2nd = new int[scheme_order_+1];
-    FD_coeff_2nd = new double [scheme_order_+1];
+        stencil_index_2nd = new int[scheme_order_+1];
+        FD_coeff_2nd = new double [scheme_order_+1];
 
-    if(scheme_order_==1){      // first order upwind scheme
+        if(scheme_order_==1){      // first order upwind scheme
 
-        _notImplemented("There is no 1st order stencil defined for advec-diffus");
-        FatalError_exit("stencil setup");
+            _notImplemented("There is no 1st order stencil defined for advec-diffus");
+            FatalError_exit("stencil setup");
 
-    } else if (scheme_order_==2) { // 2nd order central scheme
+        } else if (scheme_order_==2) { // 2nd order central scheme
 
-        stencil_index[0] =  1;
-        stencil_index[1] =  0;
-        stencil_index[2] = -1;           //[j+1,j,j-1];
+            stencil_index[0] =  1;
+            stencil_index[1] =  0;
+            stencil_index[2] = -1;           //[j+1,j,j-1];
 
-        stencil_index_2nd[0] = stencil_index[0];
-        stencil_index_2nd[1] = stencil_index[1];
-        stencil_index_2nd[2] = stencil_index[2];
+            stencil_index_2nd[0] = stencil_index[0];
+            stencil_index_2nd[1] = stencil_index[1];
+            stencil_index_2nd[2] = stencil_index[2];
 
-        FD_coeff [0] =  0.5;
-        FD_coeff [1] =  0.0;
-        FD_coeff [2] = -0.5;
+            FD_coeff [0] =  0.5;
+            FD_coeff [1] =  0.0;
+            FD_coeff [2] = -0.5;
 
-        FD_coeff_2nd [0] =  1.0;
-        FD_coeff_2nd [1] = -2.0;
-        FD_coeff_2nd [2] =  1.0;
+            FD_coeff_2nd [0] =  1.0;
+            FD_coeff_2nd [1] = -2.0;
+            FD_coeff_2nd [2] =  1.0;
 
-    }else if (scheme_order_==3){
+        }else if (scheme_order_==3){
 
-        _notImplemented("There is no 3rd order stencil defined for advec-diffus");
-        FatalError_exit("stencil setup");
+            _notImplemented("There is no 3rd order stencil defined for advec-diffus");
+            FatalError_exit("stencil setup");
 
-    }else if (scheme_order_==4){ // 4th order central scheme
+        }else if (scheme_order_==4){ // 4th order central scheme
 
-        stencil_index[0] =  2;
-        stencil_index[1] =  1;
-        stencil_index[2] =  0;
-        stencil_index[3] = -1;
-        stencil_index[4] = -2;  //[j+2,j+1,j,j-1,j-2];
+            stencil_index[0] =  2;
+            stencil_index[1] =  1;
+            stencil_index[2] =  0;
+            stencil_index[3] = -1;
+            stencil_index[4] = -2;  //[j+2,j+1,j,j-1,j-2];
 
-        stencil_index_2nd[0] = stencil_index[0];
-        stencil_index_2nd[1] = stencil_index[1];
-        stencil_index_2nd[2] = stencil_index[2];
-        stencil_index_2nd[3] = stencil_index[3];
-        stencil_index_2nd[4] = stencil_index[4];
+            stencil_index_2nd[0] = stencil_index[0];
+            stencil_index_2nd[1] = stencil_index[1];
+            stencil_index_2nd[2] = stencil_index[2];
+            stencil_index_2nd[3] = stencil_index[3];
+            stencil_index_2nd[4] = stencil_index[4];
 
-        FD_coeff [0] =  -1.0/12.0;
-        FD_coeff [1] =   2.0/3.0;
-        FD_coeff [2] =   0.0;
-        FD_coeff [3] =  -2.0/3.0;
-        FD_coeff [4] =   1.0/12.0;
+            FD_coeff [0] =  -1.0/12.0;
+            FD_coeff [1] =   2.0/3.0;
+            FD_coeff [2] =   0.0;
+            FD_coeff [3] =  -2.0/3.0;
+            FD_coeff [4] =   1.0/12.0;
 
-        FD_coeff_2nd [0] =  -1.0/12.0;
-        FD_coeff_2nd [1] =   4.0/3.0;
-        FD_coeff_2nd [2] =  -2.50;
-        FD_coeff_2nd [3] =   4.0/3.0;
-        FD_coeff_2nd [4] =  -1.0/12.0;
+            FD_coeff_2nd [0] =  -1.0/12.0;
+            FD_coeff_2nd [1] =   4.0/3.0;
+            FD_coeff_2nd [2] =  -2.50;
+            FD_coeff_2nd [3] =   4.0/3.0;
+            FD_coeff_2nd [4] =  -1.0/12.0;
 
-    }else if (scheme_order_==6){ // 6th order central scheme
+        }else if (scheme_order_==6){ // 6th order central scheme
 
-        stencil_index[0] =  3;
-        stencil_index[1] =  2;
-        stencil_index[2] =  1;
-        stencil_index[3] =  0;
-        stencil_index[4] = -1;
-        stencil_index[5] = -2;
-        stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+            stencil_index[0] =  3;
+            stencil_index[1] =  2;
+            stencil_index[2] =  1;
+            stencil_index[3] =  0;
+            stencil_index[4] = -1;
+            stencil_index[5] = -2;
+            stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
 
-        stencil_index_2nd[0] = stencil_index[0];
-        stencil_index_2nd[1] = stencil_index[1];
-        stencil_index_2nd[2] = stencil_index[2];
-        stencil_index_2nd[3] = stencil_index[3];
-        stencil_index_2nd[4] = stencil_index[4];
-        stencil_index_2nd[5] = stencil_index[5];
-        stencil_index_2nd[6] = stencil_index[6];
+            stencil_index_2nd[0] = stencil_index[0];
+            stencil_index_2nd[1] = stencil_index[1];
+            stencil_index_2nd[2] = stencil_index[2];
+            stencil_index_2nd[3] = stencil_index[3];
+            stencil_index_2nd[4] = stencil_index[4];
+            stencil_index_2nd[5] = stencil_index[5];
+            stencil_index_2nd[6] = stencil_index[6];
 
-        FD_coeff [0] =   1.0/6.0;
-        FD_coeff [1] =  -0.15;
-        FD_coeff [2] =   0.75;
-        FD_coeff [3] =   0.00;
-        FD_coeff [4] =  -0.75;
-        FD_coeff [5] =   0.15;
-        FD_coeff [6] =  -1.0/6.0;
+            FD_coeff [0] =   1.0/6.0;
+            FD_coeff [1] =  -0.15;
+            FD_coeff [2] =   0.75;
+            FD_coeff [3] =   0.00;
+            FD_coeff [4] =  -0.75;
+            FD_coeff [5] =   0.15;
+            FD_coeff [6] =  -1.0/6.0;
 
-        FD_coeff_2nd [0] =   1.0/90.0;
-        FD_coeff_2nd [1] =   0.15;
-        FD_coeff_2nd [2] =   1.50;
-        FD_coeff_2nd [3] =  -49.0/18.0;
-        FD_coeff_2nd [4] =   1.50;
-        FD_coeff_2nd [5] =   0.15;
-        FD_coeff_2nd [6] =   1.0/90.0;
+            FD_coeff_2nd [0] =   1.0/90.0;
+            FD_coeff_2nd [1] =   0.15;
+            FD_coeff_2nd [2] =   1.50;
+            FD_coeff_2nd [3] =  -49.0/18.0;
+            FD_coeff_2nd [4] =   1.50;
+            FD_coeff_2nd [5] =   0.15;
+            FD_coeff_2nd [6] =   1.0/90.0;
+        }
+
+    }else if(scheme_type_ == "implicit"){
+        register int i;
+        n_linsys = Nfaces-1;
+        dfdx_   =  new double[n_linsys];
+        df2dx2_ =  new double[n_linsys];
+        alpha_vec_f1_ = new double[n_linsys];
+        alpha_vec_f2_ = new double[n_linsys];
+        b_vec_ = new double[n_linsys];
+        RHS_f1_ =  new double[n_linsys];
+        RHS_f2_ =  new double[n_linsys];
+
+        stencil_index = new int[scheme_order_-2];
+        stencil_index_2nd = new int [scheme_order_-1];
+
+        if(scheme_order_==4){
+            alpha_f1_ = 0.25;
+            a_f1_ = 1.5 * 0.5;   // a * 0.5
+            b_f1_ = 0.0;   // 0.0
+            alpha_f2_ = 0.10;
+            a_f2_ = 1.2;   // a * 1.0
+            b_f2_ = 0.0;   // 0.0
+
+            stencil_index[0] =  1;
+            stencil_index[1] = -1;       //[j+1,j-1];
+
+            stencil_index_2nd[0] =  1;
+            stencil_index_2nd[1] =  0;
+            stencil_index_2nd[2] = -1;    //[j+1,0,j-1];
+
+        }else if(scheme_order_==6){
+            alpha_f1_ = 1.0/3.0;
+            a_f1_ = 0.50 * 14.0/9.0;     // a * 0.5
+            b_f1_ = 0.25 * 1.0/9.0;      // b * 0.25
+            alpha_f2_ = 2.0/11.0;
+            a_f2_ = 12.0/11.0;    // a * 1.0
+            b_f2_ = 0.25 * 3.0/11.0;     // b * 0.25
+
+            stencil_index[0] =  2;
+            stencil_index[1] =  1;
+            stencil_index[2] = -1;
+            stencil_index[3] = -2;  //[j+2,j+1,j-1,j-2];
+
+            stencil_index_2nd[0] =  2;
+            stencil_index_2nd[1] =  1;
+            stencil_index_2nd[2] =  0;
+            stencil_index_2nd[3] = -1;
+            stencil_index_2nd[4] = -2; //[j+2,j+1,j,j-1,j-2];
+        }
+
+        for(i=0; i<n_linsys; i++){
+            alpha_vec_f1_[i] = alpha_f1_;
+            alpha_vec_f2_[i] = alpha_f2_;
+            b_vec_[i] = 1.0;
+            RHS_f1_[i]=0.0;
+            RHS_f2_[i]=0.0;
+        }
+
+    }else{
+        FatalError_exit("Wrong Scheme type for space solver, use either explicit or implicit");
     }
 
     return;
@@ -374,37 +460,103 @@ void FDSolverAdvecDiffus::update_ghost_sol(double **Qn_){
 
 void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
 
+    register int i;
+    int k=0;
+    double Idx = grid_->Idx;  // 1/h
+    double Idx2 = Idx*Idx;    // 1/h^2
+    double nu_diff = simdata_->thermal_diffus;
+
     // First Update ghost nodes:
     //-----------------------------
-
     update_ghost_sol(Qn_);
 
-    // Nodes loop to calculate and update the residual:
-    //----------------------------------------------------
+    if(scheme_type_=="explicit"){
+        // Nodes loop to calculate and update the residual:
+        //----------------------------------------------------
+        int j=0,s1,s2;
+        double temp_inv=0.0, temp_visc=0.0, invFlux=0.0;
 
-    register int i;
-
-    int k=0,j=0,s1,s2;
-
-    double Idx = grid_->Idx;
-
-    double temp_inv=0.0, temp_visc=0.0, invFlux=0.0;
-
-    for(i=0; i<Nfaces; i++){
-        for(k=0; k<Ndof; k++){
-            temp_inv=0.0;
-            temp_visc=0.0;
-            for(j=0; j<scheme_order_+1; j++){
-                s1 = stencil_index[j];
-                s2 = stencil_index_2nd[j];
-                invFlux = evaluate_inviscid_flux(Qn_[i+Nghost_l+s1][k]);
-                temp_inv  += invFlux * FD_coeff[j];
-                temp_visc += Qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
+        for(i=0; i<Nfaces; i++){
+            for(k=0; k<Ndof; k++){
+                temp_inv=0.0;
+                temp_visc=0.0;
+                for(j=0; j<scheme_order_+1; j++){
+                    s1 = stencil_index[j];
+                    s2 = stencil_index_2nd[j];
+                    invFlux = evaluate_inviscid_flux(Qn_[i+Nghost_l+s1][k]);
+                    temp_inv  += invFlux * FD_coeff[j];
+                    temp_visc += Qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
+                }
+                Resid_[i][k] = (- temp_inv * Idx )
+                        + ( temp_visc *Idx2*nu_diff );
             }
-
-            Resid_[i][k] = (- temp_inv * Idx )
-                    + ( temp_visc *Idx*Idx *simdata_->thermal_diffus );
         }
+
+    }else if(scheme_type_=="implicit"){
+        // Nodes loop to calculate and update the residual:
+        //----------------------------------------------------
+        register int i;
+        // compute 1st derivative:
+        compute_RHS_f1_implicit(Idx, &Qn_[Nghost_l], RHS_f1_);
+        cyclic_tridiag_solve_mh(n_linsys,alpha_vec_f1_,b_vec_
+                                ,alpha_vec_f1_,RHS_f1_,dfdx_);
+        // compute 2nd derivative:
+        compute_RHS_f2_implicit(Idx2, &Qn_[Nghost_l], RHS_f2_);
+        cyclic_tridiag_solve_mh(n_linsys,alpha_vec_f2_,b_vec_
+                                ,alpha_vec_f2_,RHS_f2_,df2dx2_);
+
+        for(i=0; i<n_linsys; i++)  // n_linsys == Nfaces-1
+            Resid_[i][0] = - dfdx_[i] +  nu_diff * df2dx2_[i];
+
+        Resid_[Nfaces-1][0] = Resid_[0][0];
+    }
+
+    return;
+}
+
+void FDSolverAdvecDiffus::compute_RHS_f1_implicit(const double& Idx_, double** qn_
+                                                  , double*& RHS_temp_){
+    // Calculation of the RHS for the f' equation:
+    //-----------------------------------------------
+    register int i;
+    double fp1=0.0,fm1=0.0,fp2=0.0,fm2=0.0;
+
+    // note that Idx_ = 1/dx
+
+    for(i=0; i<n_linsys; i++){
+        fp1 = evaluate_inviscid_flux(qn_[i+1][0]);
+        fm1 = evaluate_inviscid_flux(qn_[i-1][0]);
+        RHS_temp_[i] = a_f1_ *(fp1-fm1);
+        if(scheme_order_==6){
+            fp2 = evaluate_inviscid_flux(qn_[i+2][0]);
+            fm2 = evaluate_inviscid_flux(qn_[i-2][0]);
+            RHS_temp_[i] +=  b_f1_ *(fp2-fm2);
+        }
+        RHS_temp_[i] = RHS_temp_[i]*Idx_;
+    }
+
+    return;
+}
+
+void FDSolverAdvecDiffus::compute_RHS_f2_implicit(const double& Idx2_, double** qn_
+                                                  , double*& RHS_temp_){
+    // Calculation of the RHS for the f" equation:
+    //-----------------------------------------------
+    register int i;
+    double fp1=0.0,fm1=0.0,f0=0.0,fp2=0.0,fm2=0.0;
+    // note that Idx2_ = 1/dx^2
+
+    for(i=0; i<n_linsys; i++){
+        fp1 = qn_[i+1][0];
+        f0  = qn_[i][0];
+        fm1 = qn_[i-1][0];
+        RHS_temp_[i] = a_f2_ *(fp1-2.0*f0+fm1);
+        if(scheme_order_==6){
+            fp2 = qn_[i+2][0];
+            fm2 = qn_[i-2][0];
+            RHS_temp_[i] +=  b_f2_ *(fp2-2.0*f0+fm2);
+        }
+        RHS_temp_[i] = RHS_temp_[i]*Idx2_;
     }
 
     return;

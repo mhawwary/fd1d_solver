@@ -1,5 +1,5 @@
 [Case]
- title = decay_burg_turb1   # sine wave / Gaussian / .....
+ title = decay_burg_turb_cFD_test   # sine wave / Gaussian / .....
  num_elements = 1023
  x_begin = 0.0
  x_end = 6.283185307
@@ -9,13 +9,13 @@
 
 [Simulation]
  unsteady_data_print_flag = 0   # 0: use iter , 1: use time
- unsteady_data_print_iter  = 100  # iter no. for print of unsteady data 
+ unsteady_data_print_iter  = 5000  # iter no. for print of unsteady data 
  unsteady_data_print_time  = 0.100  # time point for print of unsteady data
  convergence_tolerance = 1e-16
  divergence_threshold = 20
  restart_flag = 0   # 0: no restart, 1: restart from restart file
  restart_iter = 158e6
- mode =  test  # normal/test/error_analysis_dt/error_analysis_CFL/CFL_const/dt_const
+ mode =  dt_const  # normal/test/error_analysis_dt/error_analysis_CFL/CFL_const/dt_const
  case_no = 00
 
 [wave]
@@ -36,13 +36,17 @@
    turb_prob_type = Decay_turb_omerSan   # Decay_turb_Adams, Decay_turb_Yanan, forced_turb_Sherwin
    max_wave_no = 2048 
    ko = 10
-   spectrum_restart_flag = 0  # 0: compute new spectrum, 1: load spectrum     
-   velocity_mean = 10.0  #  u(x) = sum(E(k) *cos(k))+ u_mean
+   spectrum_restart_flag = 1  # 0: compute new spectrum, 1: load spectrum     
+   velocity_mean = 0.0  #  u(x) = sum(E(k) *cos(k))+ u_mean
 
 [space_solver]
   eqn_set = Advection_Diffusion  # Advection / Diffusion / Advection_Diffusion
   eqn_type = visc_burger # inv_burger / linear_advec / linear_diffus
-  order = 4
+  scheme_type = implicit # explicit(classical)/implicit(compact)
+  order = 6
+  filter_type = pade    # pade(compact) / 
+  filter_order = 4
+  filter_activate_flag = 0
   
   [./advec_eqn]
    upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme
@@ -54,9 +58,9 @@
  calculate_dt_flag = 0  # 0: specify dt and calc CFL, 1: specify CFL and calc dt
  calc_dt_adv_diffus_flag = 0 # 0: based on advection, 1: based on diffusion, 2: based on combined advection-diffusion
  CFL_no = 0.6310
- dt = 1.00e-4
+ dt = 1.00e-5
  initial_time = 0
- final_time = 0.100
+ final_time = 0.200
  no_of_periods = 2.0 #  period = (xf-x0) / wave_speed
  maximum_iteration = 100
  

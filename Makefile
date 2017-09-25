@@ -63,7 +63,7 @@ vpath %.h include src
 vpath %.hpp include src
 
 # Objects
-OBJS	= $(OBJ)GridData.o $(OBJ)FD1D.o $(OBJ)SimData.o $(OBJ)FDSolverAdvec.o $(OBJ)FDSolverAdvecDiffus.o $(OBJ)ExplicitTimeSolver.o # objects 
+OBJS	= $(OBJ)GridData.o $(OBJ)FD1D.o $(OBJ)SimData.o $(OBJ)FDSolverAdvec.o $(OBJ)FDSolverAdvecDiffus.o $(OBJ)ExplicitTimeSolver.o $(OBJ)solver_tools.o# objects 
 INCLS	= 
 
 # Compile
@@ -93,6 +93,7 @@ $(OBJ)GridData.o:   GridData.c
 $(OBJ)FDSolverAdvec.o: FDSolverAdvec.cpp
 $(OBJ)FDSolverAdvecDiffus.o: FDSolverAdvecDiffus.cpp
 $(OBJ)ExplicitTimeSolver.o: ExplicitTimeSolver.cpp
+$(OBJ)solver_tools.o: solver_tools.c
 
 clean:
 	rm -f ./$(OBJ)*.o ./$(BIN)*.exe 

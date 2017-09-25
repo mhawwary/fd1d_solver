@@ -53,7 +53,11 @@ void SimData::Parse(const std::string &fname){
     //-----------------------------
     eqn_set = gp_input("space_solver/eqn_set","Advection");
     eqn_type_ = gp_input("space_solver/eqn_type","linear_advec");
+    scheme_type_ = gp_input("space_solver/scheme_type","explicit");
     scheme_order_=gp_input("space_solver/order",1);
+    filter_type_ = gp_input("space_solver/filter_type","pade");
+    filter_order_=gp_input("space_solver/order",1);
+    filter_activate_flag_ = gp_input("space_solver/filter_activate_flag",0);
     // ./advec_eqn:
     upwind_biased_=gp_input("space_solver/advec_eqn/upwind_biased",1);
     // ./heat_eqn:
@@ -119,6 +123,7 @@ void SimData::prepare_dump_burgers_turb_param(){
         emptyarray(fname);
 
         // Dumping Binary data:
+        printf("--> Dumping Spectrum Binrary file...........\n");
         fname=new char[400];
         sprintf(fname,"%sspectrum_binarydata_N%d",case_postproc_dir,n_pts_);
         //printf("\nfname_bin_Spect: %s\n",fname);
@@ -141,6 +146,7 @@ void SimData::prepare_dump_burgers_turb_param(){
         if(stat(fname, &statbuf) ==-1){
             FatalError_exit("Spectrum Binary file does not exist");
         }else{
+            printf("--> Reading Spectrum Binrary file...........\n");
             FILE*  b_spect_in_=fopen(fname,"rb");
             k_wave_no_ = new int[max_wave_no_];
             epsi_phase_ = new double[max_wave_no_];
@@ -197,9 +203,21 @@ void SimData::setup_output_directory(){
     char *case_dir=nullptr;
     case_dir=new char[70];
     if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const"){
-        sprintf(case_dir,"FD%s_RK%d",scheme_OA_,RK_order_);
+        if(scheme_type_=="implicit")
+            sprintf(case_dir,"cFD%s_RK%d",scheme_OA_,RK_order_);
+        else if(scheme_type_=="explicit")
+            sprintf(case_dir,"FD%s_RK%d",scheme_OA_,RK_order_);
+        else
+            FatalError_exit("Wrong scheme type for space solver");
+
     }else if(Sim_mode=="test"){
-        sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
+        if(scheme_type_=="implicit")
+            sprintf(case_dir,"cFD%s_RK%d_test",scheme_OA_,RK_order_);
+        else if(scheme_type_=="explicit")
+            sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
+        else
+            FatalError_exit("Wrong scheme type for space solver");
+
     }else _notImplemented("Simulation mode");
 
     char *main_dir=nullptr;
@@ -303,14 +321,19 @@ void SimData::dump_python_inputfile(){
     else if(wave_form_==3) fprintf(python_out,"wave_form:%s\n",(char*)"Decaying_Burgers_turb");
 
     fprintf(python_out,"mode:%s\n",Sim_mode.c_str());
-
+    fprintf(python_out,"scheme_type:%s\n",scheme_type_.c_str());
     fprintf(python_out,"FDOA:%d\n",scheme_order_);
+    if(filter_activate_flag_==1){
+        fprintf(python_out,"filter_flag:%d\n",filter_activate_flag_);
+        fprintf(python_out,"filter_type:%s\n",filter_type_.c_str());
+        fprintf(python_out,"filterOA:%d\n",filter_order_);
+    }
     fprintf(python_out,"RK:%d\n",RK_order_);
     fprintf(python_out,"Nelem:%d\n",Nelem_);
     fprintf(python_out,"Nexact:%d\n",N_exact_ppts);
     fprintf(python_out,"CFL:%1.4f\n",CFL_);
     fprintf(python_out,"dt:%1.3e\n",dt_);
-    fprintf(python_out,"t_end:%1.3e\n",t_end_);
+    fprintf(python_out,"t_end:%1.3f\n",t_end_);
     fprintf(python_out,"T:%1.3f\n",Nperiods);
 
     fclose(python_out);

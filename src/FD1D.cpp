@@ -7,6 +7,7 @@
 #include"FDSolverAdvecDiffus.hpp"
 #include"ExplicitTimeSolver.hpp"
 
+
 void InitSim(const int& argc, char** argv);
 void RunSim();
 void PostProcess();
@@ -28,7 +29,12 @@ int main(int argc, char** argv){
 
     if (argc < 2) {
 
-        cout << "ERROR: No inputs are specified ... " << endl; return(0);
+        cout << "ERROR: No inputs are specified ... " << endl;
+
+        //test_tridaig(10);
+        //test_cyclic_tridiag(10);
+
+        return 0;
     }
 
     logo();

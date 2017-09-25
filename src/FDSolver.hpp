@@ -5,6 +5,7 @@
 #include"SimData.hpp"
 #include"general_tools.h"
 #include"global_var.h"
+#include"solver_tools.h"
 
 //struct SimData;
 //struct GridData;
@@ -21,7 +22,6 @@ public:
 
    virtual void InitSol()=0;
    virtual void UpdateResid(double **Resid_, double **Qn_)=0;
-   //virtual void UpdateSolution(double **Qn_)=0;
 
    virtual double L1_error_nodal_sol()=0;
    virtual double L2_error_nodal_sol()=0;
@@ -89,7 +89,7 @@ public:
 
 protected:
 
-   virtual void setup_stencil()=0;
+   virtual void setup_coefficients()=0;
 
    virtual void update_ghost_sol(double **Qn_)=0;
 
@@ -108,9 +108,23 @@ protected:
    GridData *grid_=nullptr;
    SimData *simdata_=nullptr;
 
+   std::string scheme_type_;
    int scheme_order_=1;
+   std::string filter_type_;
+   int filter_order_=1;
+   int filter_activate_flag =0;
+
+   // explicit (classical) FD parameters:
    int *stencil_index=nullptr;
    double *FD_coeff=nullptr;
+
+   // implicit (compact) FD parameters:
+   double alpha_f1_=0.0;  // for f'
+   double a_f1_ =0.0;
+   double b_f1_ =0.0;
+   double alpha_f2_=0.0;  // for f"
+   double a_f2_ =0.0;
+   double b_f2_ =0.0;
 
    int Ndof = 1;
 
@@ -123,6 +137,9 @@ protected:
    double **Q_exact_pp=nullptr; //Nppoints * Ndof long
 
    double **Q_exact=nullptr;
+
+   double *dfdx_=nullptr;
+   double *df2dx2_ = nullptr;
 
    double phy_time=0.0;
    double time_step=1e-5;
