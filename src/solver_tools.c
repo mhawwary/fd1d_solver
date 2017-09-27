@@ -68,7 +68,7 @@ void construct_tridiag_example(const int n, double *&a, double *&b, double *&c
 }
 
 void tridiag_solve_mh(const int n, const double *a, const double *b
-                     , const double *c, const double *d, double *&x){
+                     , const double *c, const double *d, double *x){
     register int i;
     double *gam=nullptr;
     gam = new double[n];
@@ -101,7 +101,7 @@ void tridiag_solve_mh(const int n, const double *a, const double *b
 }
 
 void cyclic_tridiag_solve_mh(const int n, const double *a, const double *b
-                     , const double *c, const double *d, double *&x){
+                     , const double *c, const double *d, double *x){
     register int i;
 
     double *u=nullptr, *z=nullptr, *bb=nullptr;

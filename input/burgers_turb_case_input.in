@@ -1,5 +1,5 @@
 [Case]
- title = decay_burg_turb2   # sine wave / Gaussian / .....
+ title = test   # sine wave / Gaussian / .....
  num_elements = 1023
  x_begin = 0.0
  x_end = 6.283185307
@@ -42,11 +42,12 @@
 [space_solver]
   eqn_set = Advection_Diffusion  # Advection / Diffusion / Advection_Diffusion
   eqn_type = visc_burger # inv_burger / linear_advec / linear_diffus
-  scheme_type = explicit # explicit(classical)/implicit(compact)
+  scheme_type = implicit # explicit(classical)/implicit(compact)
   order = 4
   filter_type = pade    # pade(compact) / 
-  filter_order = 4
-  filter_activate_flag = 0
+  filter_order = 6
+  filter_activate_flag = 1
+  filter_alpha = 0.50
   
   [./advec_eqn]
    upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme
@@ -57,7 +58,7 @@
 [time_solver]
  calculate_dt_flag = 1  # 0: specify dt and calc CFL, 1: specify CFL and calc dt
  calc_dt_adv_diffus_flag = 0 # 0: based on advection, 1: based on diffusion, 2: based on combined advection-diffusion
- CFL_no = 0.6310
+ CFL_no = 0.900
  dt = 1.00e-5
  initial_time = 0
  final_time = 1.000

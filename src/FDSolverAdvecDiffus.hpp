@@ -2,6 +2,7 @@
 #define FDSOLVERADVECDIFFUS_H
 
 #include "FDSolver.hpp"
+#include "PadeFilter.hpp"
 
 
 class FDSolverAdvecDiffus:public FDSolver{
@@ -37,6 +38,7 @@ public:
    virtual void Compute_exact_sol();
    virtual void Compute_exact_sol_for_plot();
    virtual void dump_timeaccurate_sol();
+   virtual void filter_solution(double **qn_);
 
 protected:
    double evaluate_inviscid_flux(const double& qn_);
@@ -45,6 +47,9 @@ protected:
                                 , double*& RHS_temp_);
    void compute_RHS_f2_implicit(const double& hh_, double** qn_
                                 , double*& RHS_temp_);
+
+   void copy_sol_to_Qfilt(double** Q_in_);
+   void copy_Qfilt_to_sol(double** Q_out_);
 
 protected:
    // for explicit FD:
@@ -58,6 +63,10 @@ protected:
 
    double *RHS_f1_=nullptr;
    double *RHS_f2_=nullptr;
+
+   PadeFilter *filter=nullptr;
+   double filter_alpha_=0.0;
+   double *Qn_filt=nullptr; // one D array of nodal solutions
 
    int n_linsys=0;
 

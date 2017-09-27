@@ -135,6 +135,8 @@ void ExplicitTimeSolver::FwdEuler(double **q_){
         for(k=0; k<Ndof; k++)
             q_[j+Nghost_l][k] = q_[j+Nghost_l][k] + dt_ * resid[j][k];
 
+    if(simdata->filter_activate_flag_==1)
+        space_solver->filter_solution(q_);
     space_solver->UpdateResid(resid,q_);
 
     return;
@@ -165,6 +167,8 @@ void ExplicitTimeSolver::SSPRK22(double **q_){
                                       + dt_ * resid[j][k] );
         }
 
+    if(simdata->filter_activate_flag_==1)
+        space_solver->filter_solution(q_);
     space_solver->UpdateResid(resid,q_);
 
     return;
@@ -185,7 +189,6 @@ void ExplicitTimeSolver::SSPRK33(double **q_){
         for(k=0; k<Ndof; k++)
             q_[j+Nghost_l][k] = q_temp[j][k] + dt_ * resid[j][k];
 
-
     space_solver->UpdateResid(resid,q_);
 
     // Step2:
@@ -204,6 +207,8 @@ void ExplicitTimeSolver::SSPRK33(double **q_){
             q_[j+Nghost_l][k] =  ( q_temp[j][k]/3. )
                     + 2. * ( q_[j+Nghost_l][k] + dt_ * resid[j][k] ) / 3.;
 
+    if(simdata->filter_activate_flag_==1)
+        space_solver->filter_solution(q_);
     space_solver->UpdateResid(resid,q_);
 
     return;
@@ -254,6 +259,8 @@ void ExplicitTimeSolver::classicRK4(double **q_){
                     + (dt_/6.0) * ( resid_temp0[j][k] + 2.0*resid_temp1[j][k]
                                    + 2.0*resid_temp2[j][k] + resid[j][k] );
 
+    if(simdata->filter_activate_flag_==1)
+        space_solver->filter_solution(q_);
     space_solver->UpdateResid(resid,q_);
 
     return;
@@ -261,6 +268,7 @@ void ExplicitTimeSolver::classicRK4(double **q_){
 
 void ExplicitTimeSolver::ComputeInitialResid(double **qn_){
 
+    //space_solver->filter_solution(qn_);
     space_solver->UpdateResid(resid,qn_);
 
     return;

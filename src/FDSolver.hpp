@@ -87,6 +87,8 @@ public:
    virtual void dump_errors(double &L1_error_, double &L2_error_)=0;
    virtual void   dump_timeaccurate_sol()=0;
 
+   virtual void filter_solution(double **qn_)=0;
+
 protected:
 
    virtual void setup_coefficients()=0;

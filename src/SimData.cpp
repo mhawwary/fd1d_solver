@@ -56,8 +56,9 @@ void SimData::Parse(const std::string &fname){
     scheme_type_ = gp_input("space_solver/scheme_type","explicit");
     scheme_order_=gp_input("space_solver/order",1);
     filter_type_ = gp_input("space_solver/filter_type","pade");
-    filter_order_=gp_input("space_solver/order",1);
+    filter_order_=gp_input("space_solver/filter_order",1);
     filter_activate_flag_ = gp_input("space_solver/filter_activate_flag",0);
+    filter_alpha_=gp_input("space_solver/filter_alpha",0.40);
     // ./advec_eqn:
     upwind_biased_=gp_input("space_solver/advec_eqn/upwind_biased",1);
     // ./heat_eqn:
@@ -327,6 +328,7 @@ void SimData::dump_python_inputfile(){
         fprintf(python_out,"filter_flag:%d\n",filter_activate_flag_);
         fprintf(python_out,"filter_type:%s\n",filter_type_.c_str());
         fprintf(python_out,"filterOA:%d\n",filter_order_);
+        fprintf(python_out,"filter_alpha:%1.3f\n",filter_alpha_);
     }
     fprintf(python_out,"RK:%d\n",RK_order_);
     fprintf(python_out,"Nelem:%d\n",Nelem_);

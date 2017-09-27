@@ -23,7 +23,54 @@ SimData   simdata;
 GridData *meshdata;
 FDSolver *fd_solver;
 ExplicitTimeSolver *time_solver;
+PadeFilter *filter_solver;
 
+void test_pade_filter();
+
+void test_pade_filter(){
+
+    register int i;
+    int nnodes_=50;
+    int n_linsys = nnodes_-2;
+    double **Q=nullptr;
+    double *x=nullptr;
+
+    Q = new double*[nnodes_];
+    x = new double[nnodes_];
+
+    double x0=0.0,xf=1.0;
+    double dx = (xf-x0)/(nnodes_-1);
+    for(i=0; i<nnodes_; i++){
+        x[i]   = dx * (i)  + x0 ;  // node 0, element i
+
+        Q[i] = new double[1];
+        Q[i][0] = sin( 2 * PI *x[i] );
+    }
+
+    filter_solver = new PadeFilter;
+    std::string bound_type = "Periodic";
+    filter_solver->setup_filter(6,nnodes_
+                                ,0.40,bound_type);
+
+
+    printf("\n Unfiltered Q: \n");
+    for(i=0; i<nnodes_; i++)
+        printf("%1.2f \t %1.5f\n",x[i],Q[i][0]);
+    printf("===============================================\n");
+
+    filter_solver->filtered_sol(Q);
+
+    //Q[n_linsys][0] = Q[0][0];
+
+    printf("\n Filtered Q: \n");
+    for(i=0; i<nnodes_; i++)
+        printf("%1.2f \t %1.5f\n",x[i],Q[i][0]);
+
+    emptyarray(nnodes_,Q);
+    emptyarray(x);
+
+    return;
+}
 
 int main(int argc, char** argv){
 
@@ -33,6 +80,8 @@ int main(int argc, char** argv){
 
         //test_tridaig(10);
         //test_cyclic_tridiag(10);
+
+        test_pade_filter();
 
         return 0;
     }
@@ -94,6 +143,11 @@ void InitSim(const int& argc,char** argv){
         time_solver = new ExplicitTimeSolver;
         time_solver->setupTimeSolver(fd_solver,&simdata);
         simdata.dump_python_inputfile();
+
+//        if(simdata.filter_activate_flag_==1){
+//            filter_solver = new PadeFilter;
+//            filter_solver->setup_filter(fd_solver->GetNfaces(),simdata);
+//        }
 
         //setup_stencil();
         //init_solution();
@@ -187,15 +241,6 @@ void RunSim(){
 //            }
     }
 
-    // Last iteration:
-
-//    time_solver->SolveOneStep(fd_solver->GetNumSolution());
-//    time_solver->space_solver->UpdatePhyTime(fd_solver->GetLastTimeStep());
-//    gtime=fd_solver->GetPhyTime();
-
-//    printf("Iter No:%d, time: %f\n",time_solver->GetIter(),gtime);
-//    fd_solver->dump_timeaccurate_sol();
-
     return;
 }
 
@@ -215,7 +260,6 @@ void PostProcess(){
 
     return;
 }
-
 
 void check_divergence(int& check_div_, int& check_conv_,const double& threshold
                       , const double& conv_thresh,double** Qn_
@@ -252,7 +296,6 @@ void check_convergence(int& check_conv_, double& Q_sum){
 //    if(Q_sum <= 1e-10) check_conv_=1;
     return;
 }
-
 
 void logo(){
 

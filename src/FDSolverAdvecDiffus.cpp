@@ -17,12 +17,14 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
     Ndof= 1;
 
     Nfaces = grid_->Nfaces;
+    n_linsys = Nfaces-1;
 
     scheme_type_ = simdata_->scheme_type_;
     scheme_order_ = simdata_->scheme_order_;
     filter_type_ = simdata_->filter_type_;
     filter_order_ = simdata_->filter_order_;
     filter_activate_flag = simdata_->filter_activate_flag_;
+    filter_alpha_ = simdata_->filter_alpha_;
 
     if(scheme_type_=="explicit"){
         if(scheme_order_==1){
@@ -64,6 +66,15 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
     }
 
     Nfaces_tot = Nghost_l + Nfaces + Nghost_r;
+
+    if(filter_activate_flag==1){
+        filter = new PadeFilter;
+        std::string Bound_type = "Periodic";
+        filter->setup_filter(filter_order_,Nfaces,filter_alpha_
+                             ,Bound_type);
+
+        Qn_filt = new double[n_linsys];
+    }
 
     Qn      =  new double* [Nfaces_tot];
     Q_init  =  new double* [Nfaces];
@@ -115,6 +126,9 @@ void FDSolverAdvecDiffus::Reset_solver(){
     emptyarray(b_vec_);
     emptyarray(RHS_f1_);
     emptyarray(RHS_f2_);
+
+    emptypointer(filter);
+    emptyarray(Qn_filt);
 
     return;
 }
@@ -458,7 +472,7 @@ void FDSolverAdvecDiffus::update_ghost_sol(double **Qn_){
     return;
 }
 
-void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
+void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **qn_){
 
     register int i;
     int k=0;
@@ -468,7 +482,7 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
 
     // First Update ghost nodes:
     //-----------------------------
-    update_ghost_sol(Qn_);
+    update_ghost_sol(qn_);
 
     if(scheme_type_=="explicit"){
         // Nodes loop to calculate and update the residual:
@@ -483,9 +497,9 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
                 for(j=0; j<scheme_order_+1; j++){
                     s1 = stencil_index[j];
                     s2 = stencil_index_2nd[j];
-                    invFlux = evaluate_inviscid_flux(Qn_[i+Nghost_l+s1][k]);
+                    invFlux = evaluate_inviscid_flux(qn_[i+Nghost_l+s1][k]);
                     temp_inv  += invFlux * FD_coeff[j];
-                    temp_visc += Qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
+                    temp_visc += qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
                 }
                 Resid_[i][k] = (- temp_inv * Idx )
                         + ( temp_visc *Idx2*nu_diff );
@@ -497,11 +511,11 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
         //----------------------------------------------------
         register int i;
         // compute 1st derivative:
-        compute_RHS_f1_implicit(Idx, &Qn_[Nghost_l], RHS_f1_);
+        compute_RHS_f1_implicit(Idx, &qn_[Nghost_l], RHS_f1_);
         cyclic_tridiag_solve_mh(n_linsys,alpha_vec_f1_,b_vec_
                                 ,alpha_vec_f1_,RHS_f1_,dfdx_);
         // compute 2nd derivative:
-        compute_RHS_f2_implicit(Idx2, &Qn_[Nghost_l], RHS_f2_);
+        compute_RHS_f2_implicit(Idx2, &qn_[Nghost_l], RHS_f2_);
         cyclic_tridiag_solve_mh(n_linsys,alpha_vec_f2_,b_vec_
                                 ,alpha_vec_f2_,RHS_f2_,df2dx2_);
 
@@ -511,6 +525,11 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **Qn_){
         Resid_[Nfaces-1][0] = Resid_[0][0];
     }
 
+    return;
+}
+
+void FDSolverAdvecDiffus::filter_solution(double **qn_){
+        filter->filtered_sol(&qn_[Nghost_l]);  // filtering the solution
     return;
 }
 
@@ -558,6 +577,26 @@ void FDSolverAdvecDiffus::compute_RHS_f2_implicit(const double& Idx2_, double** 
         }
         RHS_temp_[i] = RHS_temp_[i]*Idx2_;
     }
+
+    return;
+}
+
+void FDSolverAdvecDiffus::copy_sol_to_Qfilt(double** Q_in_){
+
+    register int i;
+
+    for(i=0; i<n_linsys; i++)
+        Qn_filt[i] = Q_in_[i][0];
+
+    return;
+}
+
+void FDSolverAdvecDiffus::copy_Qfilt_to_sol(double** Q_out_){
+
+    register int i;
+
+    for(i=0; i<n_linsys; i++)
+        Q_out_[i][0] = Qn_filt[i];
 
     return;
 }
@@ -889,28 +928,6 @@ void FDSolverAdvecDiffus::dump_errors(double &L1_error_, double &L2_error_){
 
     return;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

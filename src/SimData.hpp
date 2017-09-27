@@ -62,6 +62,7 @@ struct SimData {
     std::string filter_type_;   // pade(compact) /
     int filter_order_=0;
     int filter_activate_flag_=0;
+    double filter_alpha_=0.0;
     // ./advec_eqn:
     int upwind_biased_=1;
     // ./heat_eqn:

@@ -47,6 +47,7 @@
   filter_type = pade    # pade(compact) / 
   filter_order = 4
   filter_activate_flag = 0
+  filter_alpha = 0.40
   
   [./advec_eqn]
    upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme

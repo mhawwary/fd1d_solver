@@ -10,10 +10,10 @@ void construct_tridiag_example(const int n, double *&a, double *&b, double *&c
 void test_cyclic_tridiag(const int& n);
 
 void tridiag_solve_mh(const int n, const double *a, const double *b
-                     , const double *c, const double *d, double *&x);
+                     , const double *c, const double *d, double *x);
 
 void cyclic_tridiag_solve_mh(const int n, const double *a, const double *b
-                     , const double *c, const double *d, double *&x);
+                     , const double *c, const double *d, double *x);
 
 void test_tridaig(const int& n);
 
