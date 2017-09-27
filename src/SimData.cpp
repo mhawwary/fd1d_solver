@@ -179,14 +179,6 @@ void SimData::setup_output_directory(){
 
     case_postproc_dir =new char[350];
 
-//    char *case_title=nullptr;
-//    case_title=new char[30];
-//    if(wave_form_==0) sprintf(case_title,"sine_wave");
-//    else if(wave_form_==1) sprintf(case_title,"Gaussian_wave");
-//    else if(wave_form_==2) sprintf(case_title,"InViscid_Burgers");
-//    else if(wave_form_==3) sprintf(case_title,"Decaying_Burgers_turb");
-//    else FatalError_exit("Wrong Wave form and not implemented");
-
     char scheme_OA_[20];
     if(scheme_order_==1){
         sprintf(scheme_OA_,"1st");
@@ -204,20 +196,38 @@ void SimData::setup_output_directory(){
     char *case_dir=nullptr;
     case_dir=new char[70];
     if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const"){
-        if(scheme_type_=="implicit")
-            sprintf(case_dir,"cFD%s_RK%d",scheme_OA_,RK_order_);
-        else if(scheme_type_=="explicit")
-            sprintf(case_dir,"FD%s_RK%d",scheme_OA_,RK_order_);
-        else
+        if(scheme_type_=="implicit"){
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"C%dF%d_alpha%1.3f_RK%d"
+                        ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
+            else
+                sprintf(case_dir,"cFD%s_RK%d",scheme_OA_,RK_order_);
+        }else if(scheme_type_=="explicit"){
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"F%dF%d_alpha%1.3f_RK%d",scheme_order_,filter_order_
+                        ,filter_alpha_,RK_order_);
+            else
+                sprintf(case_dir,"FD%s_RK%d",scheme_OA_,RK_order_);
+        }else{
             FatalError_exit("Wrong scheme type for space solver");
+        }
 
     }else if(Sim_mode=="test"){
-        if(scheme_type_=="implicit")
-            sprintf(case_dir,"cFD%s_RK%d_test",scheme_OA_,RK_order_);
-        else if(scheme_type_=="explicit")
-            sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
-        else
+        if(scheme_type_=="implicit"){
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"C%dF%d_alpha%1.3f_RK%d_test"
+                        ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
+            else
+                sprintf(case_dir,"cFD%s_RK%d_test",scheme_OA_,RK_order_);
+        }else if(scheme_type_=="explicit"){
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"F%dF%d_alpha%1.3f_RK%d_test",scheme_order_,filter_order_
+                        ,filter_alpha_,RK_order_);
+            else
+                sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
+        }else{
             FatalError_exit("Wrong scheme type for space solver");
+        }
 
     }else _notImplemented("Simulation mode");
 
