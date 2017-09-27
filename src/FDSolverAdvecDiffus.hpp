@@ -48,9 +48,6 @@ protected:
    void compute_RHS_f2_implicit(const double& hh_, double** qn_
                                 , double*& RHS_temp_);
 
-   void copy_sol_to_Qfilt(double** Q_in_);
-   void copy_Qfilt_to_sol(double** Q_out_);
-
 protected:
    // for explicit FD:
    double *FD_coeff_2nd=nullptr;  // coefficients for 2nd derivative
@@ -66,7 +63,7 @@ protected:
 
    PadeFilter *filter=nullptr;
    double filter_alpha_=0.0;
-   double *Qn_filt=nullptr; // one D array of nodal solutions
+//   double *Qn_filt=nullptr; // one D array of nodal solutions
 
    int n_linsys=0;
 

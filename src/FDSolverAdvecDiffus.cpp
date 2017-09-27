@@ -72,8 +72,6 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
         std::string Bound_type = "Periodic";
         filter->setup_filter(filter_order_,Nfaces,filter_alpha_
                              ,Bound_type);
-
-        Qn_filt = new double[n_linsys];
     }
 
     Qn      =  new double* [Nfaces_tot];
@@ -128,7 +126,6 @@ void FDSolverAdvecDiffus::Reset_solver(){
     emptyarray(RHS_f2_);
 
     emptypointer(filter);
-    emptyarray(Qn_filt);
 
     return;
 }
@@ -577,26 +574,6 @@ void FDSolverAdvecDiffus::compute_RHS_f2_implicit(const double& Idx2_, double** 
         }
         RHS_temp_[i] = RHS_temp_[i]*Idx2_;
     }
-
-    return;
-}
-
-void FDSolverAdvecDiffus::copy_sol_to_Qfilt(double** Q_in_){
-
-    register int i;
-
-    for(i=0; i<n_linsys; i++)
-        Qn_filt[i] = Q_in_[i][0];
-
-    return;
-}
-
-void FDSolverAdvecDiffus::copy_Qfilt_to_sol(double** Q_out_){
-
-    register int i;
-
-    for(i=0; i<n_linsys; i++)
-        Q_out_[i][0] = Qn_filt[i];
 
     return;
 }
