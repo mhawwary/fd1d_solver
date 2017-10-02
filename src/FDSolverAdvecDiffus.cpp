@@ -214,13 +214,13 @@ void FDSolverAdvecDiffus::setup_coefficients(){
             stencil_index_2nd[5] = stencil_index[5];
             stencil_index_2nd[6] = stencil_index[6];
 
-            FD_coeff [0] =   1.0/6.0;
+            FD_coeff [0] =   1.0/60.0;
             FD_coeff [1] =  -0.15;
             FD_coeff [2] =   0.75;
             FD_coeff [3] =   0.00;
             FD_coeff [4] =  -0.75;
             FD_coeff [5] =   0.15;
-            FD_coeff [6] =  -1.0/6.0;
+            FD_coeff [6] =  -1.0/60.0;
 
             FD_coeff_2nd [0] =   1.0/90.0;
             FD_coeff_2nd [1] =   0.15;

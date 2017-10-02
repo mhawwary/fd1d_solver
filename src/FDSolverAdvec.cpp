@@ -186,13 +186,13 @@ void FDSolverAdvec::setup_coefficients(){
         stencil_index[5] = -2;
         stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
 
-        FD_coeff [0] =   1.0/6.0;
+        FD_coeff [0] =   1.0/60.0;
         FD_coeff [1] =  -0.15;
         FD_coeff [2] =   0.75;
         FD_coeff [3] =   0.00;
         FD_coeff [4] =  -0.75;
         FD_coeff [5] =   0.15;
-        FD_coeff [6] =  -1.0/6.0;
+        FD_coeff [6] =  -1.0/60.0;
     }
 
     return;
