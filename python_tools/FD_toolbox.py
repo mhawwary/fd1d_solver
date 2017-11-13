@@ -176,6 +176,7 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     ylim_1 = list();
     ylim_0.append(min(u_num));
     ylim_1.append(max(u_num));
+    print('u_max: ',max(u_num));
     plt.plot(x_num,u_num,'-or',label=label_); 
     plt.legend();
     plt.xlabel('x',labelpad=10);

@@ -382,6 +382,11 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
             last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
         }
 
+        if(last_time_step<=1e-10){
+            last_time_step=time_step;
+            simdata_->maxIter_--;
+        }
+
     }else if(simdata_->end_of_sim_flag_==2){  // use no. of iterations
 
         simdata_->t_end_ = simdata_->maxIter_ * time_step;

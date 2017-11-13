@@ -44,13 +44,13 @@ void test_pade_filter(){
         x[i]   = dx * (i)  + x0 ;  // node 0, element i
 
         Q[i] = new double[1];
-        Q[i][0] = sin( 2 * PI *x[i] );
+        Q[i][0] = 1.00;
     }
 
     filter_solver = new PadeFilter;
     std::string bound_type = "Periodic";
-    filter_solver->setup_filter(6,nnodes_
-                                ,0.40,bound_type);
+    filter_solver->setup_filter(8,nnodes_
+                                ,0.10,bound_type);
 
 
     printf("\n Unfiltered Q: \n");
@@ -340,7 +340,7 @@ void RunSim(){
         dt_last_print = fd_solver->GetLastTimeStep();
         time_solver->Set_time_step(dt_last_print);
         time_solver->SolveOneStep(fd_solver->GetNumSolution());
-        if(dt_last_print>=1e-08)
+        if(dt_last_print>=temp_tol)
             time_solver->space_solver->UpdatePhyTime(dt_last_print);
         else
             time_solver->space_solver->UpdatePhyTime(dt_);
