@@ -94,11 +94,12 @@ int main(int argc, char** argv){
 
     RunSim();
 
-    if(simdata.wave_form_!=3)
+    if(simdata.wave_form_!=3){
         PostProcess();
-
-    printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
-    printf("Final time is: %1.5f\n",fd_solver->GetPhyTime());
+    }else{
+        printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
+        printf("Final time is: %1.5f\n",fd_solver->GetPhyTime());
+    }
 
     clock_t t_end=clock();
     cout << "Elapsed Time: " << 1.0*(t_end-t_start)/CLOCKS_PER_SEC
@@ -171,27 +172,109 @@ void InitSim(const int& argc,char** argv){
 
 void RunSim(){
 
+/*    int n_iter_print;
+//    int local_iter=0;
+//    double dt_last_print=0.0;
+//    //int check_div_=0,check_conv_=0;
+//    //double Q_max=20.0,Q_sum=0.0;
+
+//    double gtime = fd_solver->GetPhyTime();
+//    double dt_= fd_solver->GetTimeStep();
+
+//    if(simdata.unsteady_data_print_flag_==0){        // use iter no. to print
+//        n_iter_print = simdata.unsteady_data_print_iter_;
+//        dt_last_print = dt_;
+//        n_iter_print--;
+//    }else if(simdata.unsteady_data_print_flag_==1){   // use time point to print
+//        n_iter_print= (int) round( simdata.unsteady_data_print_time_/ dt_) ;
+//        if((n_iter_print*dt_) > simdata.unsteady_data_print_time_ ){
+//            dt_last_print = simdata.unsteady_data_print_time_ - ((n_iter_print-1) * dt_);
+//            n_iter_print--;
+//        }else if((n_iter_print*dt_) < simdata.unsteady_data_print_time_ ){
+//            dt_last_print = simdata.unsteady_data_print_time_ - (n_iter_print*dt_);
+//        }
+//    }else{
+//        FatalError_exit("unsteady data print flag error");
+//    }
+
+//    printf("\nnIter to print unsteady data: %d, dt_last: %1.5e"
+//           ,n_iter_print, dt_last_print);
+
+//    // First Solve:
+//    time_solver->ComputeInitialResid(fd_solver->GetNumSolution());
+//    time_solver->SolveOneStep(fd_solver->GetNumSolution());
+//    time_solver->space_solver->UpdatePhyTime(dt_);
+//    gtime=fd_solver->GetPhyTime();
+//    local_iter++;
+
+//    if(time_solver->GetIter()%n_iter_print==0){
+//        printf("\nIter No:%d, time: %1.5f\n",time_solver->GetIter(),gtime);
+//        fd_solver->dump_timeaccurate_sol();
+//    }
+
+    // main solution loop:
+//    while ( gtime < (simdata.t_end_-1e-11)  ){
+
+//            time_solver->SolveOneStep(fd_solver->GetNumSolution());
+//            time_solver->space_solver->UpdatePhyTime(dt_);
+//            gtime=fd_solver->GetPhyTime();
+//            local_iter++;
+
+////            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
+////                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
+
+//            if(local_iter%n_iter_print==0){
+//                time_solver->Set_time_step(dt_last_print);
+//                time_solver->SolveOneStep(fd_solver->GetNumSolution());
+//                time_solver->space_solver->UpdatePhyTime(dt_last_print);
+//                gtime=fd_solver->GetPhyTime();
+//                printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
+//                fd_solver->dump_timeaccurate_sol();
+//                time_solver->Set_time_step(dt_);
+//                local_iter=0;
+//            }
+
+////            if(time_solver->GetIter()%300000==0){
+////                cout << "Iter No.:  "<<time_solver->GetIter()
+////                     <<"\t Q_max:  "<<Q_max
+////                    <<"\t Q_sum:  "<<Q_sum<<endl;
+//////                cin.get();
+////            }
+    }*/
+
     int n_iter_print;
     int local_iter=0;
-    double dt_last_print=0.0;
-    //int check_div_=0,check_conv_=0;
-    //double Q_max=20.0,Q_sum=0.0;
-
     double gtime = fd_solver->GetPhyTime();
     double dt_= fd_solver->GetTimeStep();
+    double dt_last_print=0.0;
+    double temp_tol=1e-8;
 
-    if(simdata.unsteady_data_print_flag_==0){        // use iter no. to print
+    if(simdata.unsteady_data_print_flag_==0){  // use iter to print
         n_iter_print = simdata.unsteady_data_print_iter_;
+        if(n_iter_print<=1)
+            FatalError_exit("Warning: iter to print is  <= 1 ");
         dt_last_print = dt_;
         n_iter_print--;
+
     }else if(simdata.unsteady_data_print_flag_==1){   // use time point to print
+        if(simdata.unsteady_data_print_time_ < (dt_ + temp_tol))
+            FatalError_exit("Warning:  time to print is less than dt");
+
         n_iter_print= (int) round( simdata.unsteady_data_print_time_/ dt_) ;
-        if((n_iter_print*dt_) > simdata.unsteady_data_print_time_ ){
-            dt_last_print = simdata.unsteady_data_print_time_ - ((n_iter_print-1) * dt_);
+        if((n_iter_print*dt_) > (simdata.unsteady_data_print_time_- temp_tol) ){
             n_iter_print--;
-        }else if((n_iter_print*dt_) < simdata.unsteady_data_print_time_ ){
+            dt_last_print = simdata.unsteady_data_print_time_ - (n_iter_print * dt_);
+
+        }else if((n_iter_print*dt_) < (simdata.unsteady_data_print_time_+temp_tol) ){
             dt_last_print = simdata.unsteady_data_print_time_ - (n_iter_print*dt_);
         }
+
+        if(n_iter_print<=1)
+            FatalError_exit("Warning: iter to print is  <= 1 ");
+
+    }else if(simdata.unsteady_data_print_flag_==2){ // print each multiple of time step
+        n_iter_print = simdata.unsteady_data_print_iter_;
+        dt_last_print=dt_;
     }else{
         FatalError_exit("unsteady data print flag error");
     }
@@ -206,21 +289,24 @@ void RunSim(){
     gtime=fd_solver->GetPhyTime();
     local_iter++;
 
-    if(time_solver->GetIter()%n_iter_print==0){
-        printf("\nIter No:%d, time: %1.5f\n",time_solver->GetIter(),gtime);
+    if(n_iter_print==1){
+        printf("\nIter No:%d, time: %f",time_solver->GetIter(),gtime);
         fd_solver->dump_timeaccurate_sol();
+        local_iter=0;
     }
 
     // main solution loop:
-    while ( gtime < (simdata.t_end_-1e-11)  ){
-
+    if(simdata.unsteady_data_print_flag_==0
+            || simdata.unsteady_data_print_flag_==1){
+        while ( gtime < (simdata.t_end_-(1+1e-5)*(dt_+1e-10))){
             time_solver->SolveOneStep(fd_solver->GetNumSolution());
             time_solver->space_solver->UpdatePhyTime(dt_);
             gtime=fd_solver->GetPhyTime();
             local_iter++;
 
-//            check_divergence(check_div_, check_conv_, simdata.div_thresh_, simdata.conv_tol_
-//                             ,fd_solver->GetNumSolution(), Q_max, Q_sum);
+            //check_divergence(check_div_, check_conv_
+            // , simdata.div_thresh_, simdata.conv_tol_
+            //      ,fd_solver->GetNumSolution(), Q_max, Q_sum
 
             if(local_iter%n_iter_print==0){
                 time_solver->Set_time_step(dt_last_print);
@@ -230,15 +316,36 @@ void RunSim(){
                 printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
                 fd_solver->dump_timeaccurate_sol();
                 time_solver->Set_time_step(dt_);
+                //time_solver->Reset_iter(time_solver->GetIter()-1);
                 local_iter=0;
             }
+        }
 
-//            if(time_solver->GetIter()%300000==0){
-//                cout << "Iter No.:  "<<time_solver->GetIter()
-//                     <<"\t Q_max:  "<<Q_max
-//                    <<"\t Q_sum:  "<<Q_sum<<endl;
-////                cin.get();
-//            }
+    }else if(simdata.unsteady_data_print_flag_==2){
+        while ( fabs(gtime - simdata.t_end_) > (dt_+temp_tol)){
+
+            time_solver->SolveOneStep(fd_solver->GetNumSolution());
+            time_solver->space_solver->UpdatePhyTime(dt_);
+            gtime=fd_solver->GetPhyTime();
+            local_iter++;
+
+            if(local_iter%n_iter_print==0){
+                printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
+                fd_solver->dump_timeaccurate_sol();
+                local_iter=0;
+            }
+        }
+
+        // Last iteration:
+        dt_last_print = fd_solver->GetLastTimeStep();
+        time_solver->Set_time_step(dt_last_print);
+        time_solver->SolveOneStep(fd_solver->GetNumSolution());
+        if(dt_last_print>=1e-08)
+            time_solver->space_solver->UpdatePhyTime(dt_last_print);
+        else
+            time_solver->space_solver->UpdatePhyTime(dt_);
+
+        fd_solver->dump_timeaccurate_sol();
     }
 
     return;
@@ -299,14 +406,14 @@ void check_convergence(int& check_conv_, double& Q_sum){
 
 void logo(){
 
-    cout<<"_________________________________________________________________________________________"<<endl;
-    cout<<"                                                                                         "<<endl;
-    cout<<"                "<<"  Welcome to the Finite Difference solver   "<<"                  "<<endl;
-    cout<<"                "<<"  for 1D wave and scalar conservation laws  "<<"                  "<<endl;
-    cout<<"                                                                                         "<<endl;
-    cout<<"         Author:               Mohammad Alhawwary, PhD. Student                          "<<endl;
-    cout<<"    Affiliation:   Aerospace Engineering Department, University of Kansas, USA           "<< endl;
-    cout<<"_______________________________________03/30/2017________________________________________"<<endl;
+    cout<<"______________________________________________________________________________________________"<<endl;
+    cout<<"                                                                                              "<<endl;
+    cout<<"               "<<"  Welcome to the Compact and Finite Difference solver   "<<"               "<<endl;
+    cout<<"                   "<<"  for 1D wave and scalar conservation laws  "<<"                       "<<endl;
+    cout<<"                                                                                              "<<endl;
+    cout<<"         Author:               Mohammad Alhawwary, PhD. Student                               "<<endl;
+    cout<<"         Affiliation:   Aerospace Engineering Department, University of Kansas, USA           "<< endl;
+    cout<<"__________________________________________03/30/2017__________________________________________"<<endl;
 
     return;
 }

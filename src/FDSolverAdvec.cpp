@@ -17,37 +17,62 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     Ndof= 1;
 
     Nfaces = grid_->Nfaces;
+    n_linsys = Nfaces-1;
 
+    scheme_type_ = simdata_->scheme_type_;
     scheme_order_ = simdata_->scheme_order_;
+    filter_type_ = simdata_->filter_type_;
+    filter_order_ = simdata_->filter_order_;
+    filter_activate_flag = simdata_->filter_activate_flag_;
+    filter_alpha_ = simdata_->filter_alpha_;
 
-    if(scheme_order_==1){
-        Nghost_l = 1;
-        Nghost_r=0;
-
-    }else if(scheme_order_==2){
-        Nghost_l=1;
-        Nghost_r=1;
-
-    }else if(scheme_order_==3){
-
-        if(simdata_->upwind_biased_==1){
-            Nghost_l=2;
-            Nghost_r=1;
-        }else if(simdata_->upwind_biased_==0){
-            Nghost_l=3;
+    if(scheme_type_=="explicit"){
+        if(scheme_order_==1){
+            Nghost_l = 1;
             Nghost_r=0;
+
+        }else if(scheme_order_==2){
+            Nghost_l=1;
+            Nghost_r=1;
+
+        }else if(scheme_order_==3){
+
+            if(simdata_->upwind_biased_==1){
+                Nghost_l=2;
+                Nghost_r=1;
+            }else if(simdata_->upwind_biased_==0){
+                Nghost_l=3;
+                Nghost_r=0;
+            }
+
+        }else if(scheme_order_==4){
+            Nghost_l=2;
+            Nghost_r=2;
+
+        }else if(scheme_order_==6){
+            Nghost_l=3;
+            Nghost_r=3;
         }
 
-    }else if(scheme_order_==4){
-        Nghost_l=2;
-        Nghost_r=2;
+    }else if(scheme_type_=="implicit"){
+        if(scheme_order_==4){
+            Nghost_l=1;
+            Nghost_r=1;
 
-    }else if(scheme_order_==6){
-        Nghost_l=3;
-        Nghost_r=3;
+        }else if(scheme_order_==6){
+            Nghost_l=2;
+            Nghost_r=2;
+        }
     }
 
     Nfaces_tot = Nghost_l + Nfaces + Nghost_r;
+
+    if(filter_activate_flag==1){
+        filter = new PadeFilter;
+        std::string Bound_type = "Periodic";
+        filter->setup_filter(filter_order_,Nfaces,filter_alpha_
+                             ,Bound_type);
+    }
 
     Qn      =  new double* [Nfaces_tot];
     Q_init  =  new double* [Nfaces];
@@ -70,13 +95,237 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     setup_coefficients();
 
     SetPhyTime(simdata_->t_init_);
-    CalcTimeStep();
+    //CalcTimeStep();
     ComputeExactSolShift();
     Compute_exact_sol();
     Compute_exact_sol_for_plot();
 
+    return;
+}
+
+void FDSolverAdvec::Reset_solver(){
+
+    emptyarray(Nfaces_tot,Qn);
+    emptyarray(grid_->N_exact_ppts,Q_exact_pp);
+    emptyarray(Nfaces,Q_init);
+    emptyarray(Nfaces,Q_exact);
+
+    emptyarray(stencil_index);
+    emptyarray(FD_coeff);
+
+    simdata_->Reset();
+
+    emptyarray(dfdx_);
+    emptyarray(alpha_vec_f1_);
+    emptyarray(b_vec_);
+    emptyarray(RHS_f1_);
+
+    emptypointer(filter);
+
+    return;
+}
+
+// Solver functions
+//-------------------------------------------
+
+void FDSolverAdvec::setup_coefficients(){
+
+    if(scheme_type_ == "explicit"){
+        stencil_index = new int[scheme_order_+1];
+        FD_coeff = new double [scheme_order_+1];
+
+        if(scheme_order_==1){      // first order upwind scheme
+
+            stencil_index[0] =  0;
+            stencil_index[1] = -1;           //[j,j-1];
+
+            FD_coeff [0] =  1;
+            FD_coeff [1] = -1;
+
+        } else if (scheme_order_==2) { // 2nd order central scheme
+
+            stencil_index[0] =  1;
+            stencil_index[1] =  0;
+            stencil_index[2] = -1;           //[j+1,j,j-1];
+
+            FD_coeff [0] =  0.5;
+            FD_coeff [1] =  0.0;
+            FD_coeff [2] = -0.5;
+
+        }else if (scheme_order_==3){
+
+            if(simdata_->upwind_biased_==0) {  //for 3rd order fully upwind:
+                stencil_index[0] =  0;
+                stencil_index[1] = -1;
+                stencil_index[2] = -2;
+                stencil_index[3] = -3;  // [j,j-1,j-2,j-3];
+
+                FD_coeff [0] =  11.0/6.0;
+                FD_coeff [1] =  -3.0;
+                FD_coeff [2] =   3.0/2.0;
+                FD_coeff [3] =  -1.0/3.0;
+
+            }else if(simdata_->upwind_biased_==1){ // for 3rd order upwind biased :
+                stencil_index[0] =  1;
+                stencil_index[1] =  0;
+                stencil_index[2] = -1;
+                stencil_index[3] = -2;  //[j+1,j,j-1,j-2];
+
+                FD_coeff [0] =  1.0/3.0;
+                FD_coeff [1] =  0.5;
+                FD_coeff [2] = -1.0;
+                FD_coeff [3] =  1.0/6.0;
+
+            }else{
+                FatalError("Wrong biased upwind parameter for 3rd order scheme");
+            }
+
+        }else if (scheme_order_==4){ // 4th order central scheme
+
+            stencil_index[0] =  2;
+            stencil_index[1] =  1;
+            stencil_index[2] =  0;
+            stencil_index[3] = -1;
+            stencil_index[4] = -2;  //[j+2,j+1,j,j-1,j-2];
+
+            FD_coeff [0] =  -1.0/12.0;
+            FD_coeff [1] =   2.0/3.0;
+            FD_coeff [2] =   0.0;
+            FD_coeff [3] =  -2.0/3.0;
+            FD_coeff [4] =   1.0/12.0;
+
+        }else if (scheme_order_==6){ // 6th order central scheme
+
+            stencil_index[0] =  3;
+            stencil_index[1] =  2;
+            stencil_index[2] =  1;
+            stencil_index[3] =  0;
+            stencil_index[4] = -1;
+            stencil_index[5] = -2;
+            stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+
+            FD_coeff [0] =   1.0/60.0;
+            FD_coeff [1] =  -0.15;
+            FD_coeff [2] =   0.75;
+            FD_coeff [3] =   0.00;
+            FD_coeff [4] =  -0.75;
+            FD_coeff [5] =   0.15;
+            FD_coeff [6] =  -1.0/60.0;
+        }
+    }else if(scheme_type_ == "implicit"){
+        register int i;
+        n_linsys = Nfaces-1;
+        dfdx_   =  new double[n_linsys];
+        alpha_vec_f1_ = new double[n_linsys];
+        b_vec_ = new double[n_linsys];
+        RHS_f1_ =  new double[n_linsys];
+
+        stencil_index = new int[scheme_order_-2];
+
+        if(scheme_order_==4){
+            alpha_f1_ = 0.25;
+            a_f1_ = 1.5 * 0.5;   // a * 0.5
+            b_f1_ = 0.0;   // 0.0
+
+            stencil_index[0] =  1;
+            stencil_index[1] = -1;       //[j+1,j-1];
+
+        }else if(scheme_order_==6){
+            alpha_f1_ = 1.0/3.0;
+            a_f1_ = 0.50 * 14.0/9.0;     // a * 0.5
+            b_f1_ = 0.25 * 1.0/9.0;      // b * 0.25
+
+            stencil_index[0] =  2;
+            stencil_index[1] =  1;
+            stencil_index[2] = -1;
+            stencil_index[3] = -2;  //[j+2,j+1,j-1,j-2];
+        }
+
+        for(i=0; i<n_linsys; i++){
+            alpha_vec_f1_[i] = alpha_f1_;
+            b_vec_[i] = 1.0;
+            RHS_f1_[i]=0.0;
+        }
+
+    }else{
+        FatalError_exit("Wrong Scheme type for space solver\
+                        , use either explicit or implicit");
+    }
+
+    return;
+}
+
+void FDSolverAdvec::CalcTimeStep(){
+
+    T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
+
+    if(simdata_->calc_dt_flag==1){  // sepecify CFL
+
+        CFL = simdata_->CFL_;
+        time_step = (grid_->dx * CFL )/ simdata_->a_wave_;
+        last_time_step = time_step;
+        simdata_->dt_ = time_step;
+
+    }else if(simdata_->calc_dt_flag==0){  // sepcify dt
+
+        time_step = simdata_->dt_;
+        last_time_step = time_step;
+        CFL = simdata_->a_wave_ * time_step / grid_->dx ;
+        simdata_->CFL_ = CFL;
+
+    }else {
+
+        FatalError_exit("Wrong Calc_dt_flag");
+    }
+
+    // Determining end of simulation parameters:
+    //----------------------------------------------------
+    double temp_tol=1e-8;
+    if(simdata_->end_of_sim_flag_==0){ // use no. of periods
+
+        simdata_->t_end_ = simdata_->Nperiods * T_period;
+
+        simdata_->maxIter_ = (int) floor(simdata_->t_end_/time_step);
+
+        if((simdata_->maxIter_ * time_step)
+                > (simdata_->Nperiods * T_period) ){
+
+            last_time_step = simdata_->t_end_
+                    - ((simdata_->maxIter_-1) * time_step);
+
+        }else if((simdata_->maxIter_ * time_step)
+                 < (simdata_->Nperiods * T_period) ){
+
+            last_time_step = simdata_->t_end_
+                    - (simdata_->maxIter_ * time_step);
+        }
+
+    }else if(simdata_->end_of_sim_flag_==1){  // use final time
+
+        simdata_->Nperiods = simdata_->t_end_/T_period;
+        simdata_->maxIter_ = (int) floor(simdata_->t_end_/time_step);
+
+        if((simdata_->maxIter_ * time_step) > (simdata_->t_end_-temp_tol) ){
+
+            last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
+
+        }else if((simdata_->maxIter_ * time_step) < (simdata_->t_end_+temp_tol) ){
+
+            last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
+        }
+
+    }else if(simdata_->end_of_sim_flag_==2){  // use no. of iterations
+
+        simdata_->t_end_ = simdata_->maxIter_ * time_step;
+        simdata_->Nperiods = simdata_->t_end_/T_period;
+
+    }else{
+        FatalError_exit("Wrong end_of_simulation_flag");
+    }
+
     // Screen Output of input and simulation parameters:
     cout <<"\n===============================================\n";
+    cout << "max eigenvalue : "<<max_eigen_advec<<endl;
     cout << "CFL no.        : "<<CFL<<endl;
     cout << "time step, dt  : "<<time_step<<endl;
     cout << "last_time_step: "<<last_time_step<<endl;
@@ -95,192 +344,36 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     return;
 }
 
-void FDSolverAdvec::Reset_solver(){
-
-    emptyarray(Nfaces_tot,Qn);
-    emptyarray(grid_->N_exact_ppts,Q_exact_pp);
-    emptyarray(Nfaces,Q_init);
-    emptyarray(Nfaces,Q_exact);
-
-    emptyarray(stencil_index);
-    emptyarray(FD_coeff);
-
-    return;
-}
-
-// Solver functions
-//-------------------------------------------
-
-void FDSolverAdvec::setup_coefficients(){
-
-    stencil_index = new int[scheme_order_+1];
-    FD_coeff = new double [scheme_order_+1];
-
-    if(scheme_order_==1){      // first order upwind scheme
-
-        stencil_index[0] =  0;
-        stencil_index[1] = -1;           //[j,j-1];
-
-        FD_coeff [0] =  1;
-        FD_coeff [1] = -1;
-
-    } else if (scheme_order_==2) { // 2nd order central scheme
-
-        stencil_index[0] =  1;
-        stencil_index[1] =  0;
-        stencil_index[2] = -1;           //[j+1,j,j-1];
-
-        FD_coeff [0] =  0.5;
-        FD_coeff [1] =  0.0;
-        FD_coeff [2] = -0.5;
-
-    }else if (scheme_order_==3){
-
-        if(simdata_->upwind_biased_==0) {  //for 3rd order fully upwind:
-            stencil_index[0] =  0;
-            stencil_index[1] = -1;
-            stencil_index[2] = -2;
-            stencil_index[3] = -3;  // [j,j-1,j-2,j-3];
-
-            FD_coeff [0] =  11.0/6.0;
-            FD_coeff [1] =  -3.0;
-            FD_coeff [2] =   3.0/2.0;
-            FD_coeff [3] =  -1.0/3.0;
-
-        }else if(simdata_->upwind_biased_==1){ // for 3rd order upwind biased :
-            stencil_index[0] =  1;
-            stencil_index[1] =  0;
-            stencil_index[2] = -1;
-            stencil_index[3] = -2;  //[j+1,j,j-1,j-2];
-
-            FD_coeff [0] =  1.0/3.0;
-            FD_coeff [1] =  0.5;
-            FD_coeff [2] = -1.0;
-            FD_coeff [3] =  1.0/6.0;
-
-        }else{
-            FatalError("Wrong biased upwind parameter for 3rd order scheme");
-        }
-
-    }else if (scheme_order_==4){ // 4th order central scheme
-
-        stencil_index[0] =  2;
-        stencil_index[1] =  1;
-        stencil_index[2] =  0;
-        stencil_index[3] = -1;
-        stencil_index[4] = -2;  //[j+2,j+1,j,j-1,j-2];
-
-        FD_coeff [0] =  -1.0/12.0;
-        FD_coeff [1] =   2.0/3.0;
-        FD_coeff [2] =   0.0;
-        FD_coeff [3] =  -2.0/3.0;
-        FD_coeff [4] =   1.0/12.0;
-
-    }else if (scheme_order_==6){ // 6th order central scheme
-
-        stencil_index[0] =  3;
-        stencil_index[1] =  2;
-        stencil_index[2] =  1;
-        stencil_index[3] =  0;
-        stencil_index[4] = -1;
-        stencil_index[5] = -2;
-        stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
-
-        FD_coeff [0] =   1.0/60.0;
-        FD_coeff [1] =  -0.15;
-        FD_coeff [2] =   0.75;
-        FD_coeff [3] =   0.00;
-        FD_coeff [4] =  -0.75;
-        FD_coeff [5] =   0.15;
-        FD_coeff [6] =  -1.0/60.0;
-    }
-
-    return;
-}
-
-void FDSolverAdvec::CalcTimeStep(){
-
-    T_period = (grid_->xf - grid_->x0) / simdata_->a_wave_;
-
-    if(simdata_->calc_dt_flag==1){
-
-        CFL = simdata_->CFL_;
-        time_step = (grid_->dx * CFL )/ simdata_->a_wave_;
-        last_time_step = time_step;
-        simdata_->dt_ = time_step;
-
-    }else if(simdata_->calc_dt_flag==0){
-
-        time_step = simdata_->dt_;
-        last_time_step = time_step;
-        CFL = simdata_->a_wave_ * time_step / grid_->dx ;
-        simdata_->CFL_ = CFL;
-
-    }else {
-
-        FatalError_exit("Wrong Calc_dt_flag");
-    }
-
-    // Determining end of simulation parameters:
-    //----------------------------------------------------
-
-    if(simdata_->end_of_sim_flag_==0){
-
-        simdata_->t_end_ = simdata_->Nperiods * T_period;
-
-        simdata_->maxIter_ = (int) ceil(simdata_->t_end_/time_step);
-
-        if((simdata_->maxIter_ * time_step) > simdata_->t_end_ ){
-
-            last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
-
-        }else if((simdata_->maxIter_ * time_step) < (simdata_->Nperiods * T_period) ){
-
-            last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
-        }
-
-    }else if(simdata_->end_of_sim_flag_==1){
-
-        simdata_->Nperiods = simdata_->t_end_/T_period;
-        simdata_->maxIter_ = (int) ceil(simdata_->t_end_/time_step);
-
-        if((simdata_->maxIter_ * time_step) > simdata_->t_end_ ){
-
-            last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
-
-        }else if((simdata_->maxIter_ * time_step) < (simdata_->Nperiods * T_period) ){
-
-            last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
-        }
-
-    }else if(simdata_->end_of_sim_flag_==2){
-
-        simdata_->t_end_ = simdata_->maxIter_ * time_step;
-        simdata_->Nperiods = simdata_->t_end_/T_period;
-
-    }else{
-        FatalError_exit("Wrong end_of_simulation_flag");
-    }
-
-    return;
-}
-
 void FDSolverAdvec::InitSol(){
 
     register int j;
 
     int k=0;
 
-    for(j=0; j<Nfaces; j++){
+    max_eigen_advec = simdata_->a_wave_;
 
-        for(k=0; k<Ndof; k++){
+    if(simdata_->eqn_type_=="linear_advec"){
 
-            Q_init[j][k] = eval_init_sol(grid_->X[j]);
+        for(j=0; j<Nfaces; j++){
+            for(k=0; k<Ndof; k++){
+                Q_init[j][k] = eval_init_sol(grid_->X[j]);
+                Qn[j+Nghost_l][k] = Q_init[j][k];
+            }
+        }
+    }else if(simdata_->eqn_type_=="inv_burger"){
+        max_eigen_advec = 0.0;
+        for(j=0; j<Nfaces; j++){
+            for(k=0; k<Ndof; k++){
+                Q_init[j][k] = eval_init_sol(grid_->X[j]);
+                Qn[j+Nghost_l][k] = Q_init[j][k];
 
-            Qn[j+Nghost_l][k] = Q_init[j][k];
+                if(fabs(Q_init[j][k])>max_eigen_advec)
+                    max_eigen_advec = fabs(Q_init[j][k]);
+            }
         }
     }
 
+    CalcTimeStep();
     return;
 }
 
@@ -316,37 +409,106 @@ void FDSolverAdvec::update_ghost_sol(double **Qn_){
     return;
 }
 
-void FDSolverAdvec::UpdateResid(double **Resid_, double **Qn_){
+void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
+
+    register int i;
+    double Idx = grid_->Idx;  // 1/h
+    int k=0;
 
     // First Update ghost nodes:
     //-----------------------------
-
-    update_ghost_sol(Qn_);
-
+    update_ghost_sol(qn_);
     // Nodes loop to calculate and update the residual:
     //----------------------------------------------------
 
-    register int i;
-
-    int k=0,j=0,s;
-
-    double Idx = grid_->Idx;
-
+    /*int j=0,s;
     double temp=0.0;
-
     for(i=0; i<Nfaces; i++){
         for(k=0; k<Ndof; k++){
             temp=0.0;
             for(j=0; j<scheme_order_+1; j++){
                 s = stencil_index[j];
-                temp += Qn_[i+Nghost_l+s][k] * FD_coeff[j];
+                temp += qn_[i+Nghost_l+s][k] * FD_coeff[j];
             }
 
             Resid_[i][k] = - temp * Idx;
         }
+    }*/
+
+    if(scheme_type_=="explicit"){
+        // Nodes loop to calculate and update the residual:
+        //----------------------------------------------------
+        int j=0,s1;
+        double temp_inv=0.0, invFlux=0.0;
+
+        for(i=0; i<Nfaces; i++){
+            for(k=0; k<Ndof; k++){
+                temp_inv=0.0;
+                for(j=0; j<scheme_order_+1; j++){
+                    s1 = stencil_index[j];
+                    invFlux = evaluate_inviscid_flux(qn_[i+Nghost_l+s1][k]);
+                    temp_inv  += invFlux * FD_coeff[j];
+                }
+                Resid_[i][k] = - ( temp_inv * Idx );
+            }
+        }
+
+    }else if(scheme_type_=="implicit"){
+        // Nodes loop to calculate and update the residual:
+        //----------------------------------------------------
+        register int i;
+        // compute 1st derivative:
+        compute_RHS_f1_implicit(Idx, &qn_[Nghost_l], RHS_f1_);
+        cyclic_tridiag_solve_mh(n_linsys,alpha_vec_f1_,b_vec_
+                                ,alpha_vec_f1_,RHS_f1_,dfdx_);
+
+        for(i=0; i<n_linsys; i++)  // n_linsys == Nfaces-1
+            Resid_[i][0] = - dfdx_[i];
+
+        Resid_[Nfaces-1][0] = Resid_[0][0];
     }
 
     return;
+}
+
+void FDSolverAdvec::filter_solution(double **qn_){
+        filter->filtered_sol(&qn_[Nghost_l]);  // filtering the solution
+    return;
+}
+
+void FDSolverAdvec::compute_RHS_f1_implicit(const double& Idx_, double** qn_
+                                                  , double*& RHS_temp_){
+    // Calculation of the RHS for the f' equation:
+    //-----------------------------------------------
+    register int i;
+    double fp1=0.0,fm1=0.0,fp2=0.0,fm2=0.0;
+
+    // note that Idx_ = 1/dx
+
+    for(i=0; i<n_linsys; i++){
+        fp1 = evaluate_inviscid_flux(qn_[i+1][0]);
+        fm1 = evaluate_inviscid_flux(qn_[i-1][0]);
+        RHS_temp_[i] = a_f1_ *(fp1-fm1);
+        if(scheme_order_==6){
+            fp2 = evaluate_inviscid_flux(qn_[i+2][0]);
+            fm2 = evaluate_inviscid_flux(qn_[i-2][0]);
+            RHS_temp_[i] +=  b_f1_ *(fp2-fm2);
+        }
+        RHS_temp_[i] = RHS_temp_[i]*Idx_;
+    }
+
+    return;
+}
+
+double FDSolverAdvec::evaluate_inviscid_flux(const double& qn_){
+
+    if(simdata_->eqn_type_=="inv_burger"){ // Burgers equation
+        return (0.5 *qn_*qn_);
+    }else if(simdata_->eqn_type_=="linear_advec"){ // linear_advection
+        return (qn_*simdata_->a_wave_);
+    }else{
+        return 0.0;
+    }
 }
 
 void FDSolverAdvec::Compute_exact_sol_for_plot(){
@@ -526,13 +688,25 @@ void FDSolverAdvec::dump_timeaccurate_sol(){
     register int j=0;
 
     char *fname=nullptr;
-    fname = new char[250];
+    fname = new char[400];
 
-    sprintf(fname,"%stime_data/u_num_N%d_dt%1.3e_%1.3ft.dat"
-            ,simdata_->case_postproc_dir
-            ,grid_->Nelem
-            ,time_step
-            ,phy_time);
+    if(simdata_->Sim_mode=="normal"
+            || simdata_->Sim_mode=="test"
+            || simdata_->Sim_mode=="CFL_const"
+            || simdata_->Sim_mode=="error_analysis_CFL"){
+        sprintf(fname,"%stime_data/u_num_N%d_CFL%1.4f_%1.3ft.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,CFL
+                ,phy_time);
+    }else if(simdata_->Sim_mode=="dt_const"
+             || simdata_->Sim_mode=="error_analysis_dt" ){
+        sprintf(fname,"%stime_data/u_num_N%d_dt%1.3e_%1.3ft.dat"
+                ,simdata_->case_postproc_dir
+                ,grid_->Nelem
+                ,time_step
+                ,phy_time);
+    }
 
     FILE* sol_out=fopen(fname,"w");
 
@@ -540,6 +714,20 @@ void FDSolverAdvec::dump_timeaccurate_sol(){
         fprintf(sol_out, "%2.10e %2.10e\n", grid_->X[j], Qn[j+Nghost_l][0]);
 
     fclose(sol_out);
+    emptyarray(fname);
+
+    fname = new char[400];
+    sprintf(fname,"%stime_data/u_exact_%1.3ft.dat"
+            ,simdata_->case_postproc_dir
+            ,phy_time);
+
+    FILE* sol_out1=fopen(fname,"w");
+
+    for(j=0; j<grid_->N_exact_ppts; j++)
+        fprintf(sol_out1, "%2.10e %2.10e\n"
+                ,grid_->x_exact_ppts[j], Q_exact_pp[j][0]);
+
+    fclose(sol_out1);
     emptyarray(fname);
 
     return;

@@ -181,16 +181,16 @@ void SimData::setup_output_directory(){
 
     char scheme_OA_[20];
     if(scheme_order_==1){
-        sprintf(scheme_OA_,"1st");
+        sprintf(scheme_OA_,"1");
     }else if(scheme_order_==2){
-        sprintf(scheme_OA_,"2nd");
+        sprintf(scheme_OA_,"2");
     }else if(scheme_order_==3){
         if(upwind_biased_==1) sprintf(scheme_OA_,"3rd_biased");
         else sprintf(scheme_OA_,"3rd_fupwind");
     }else if(scheme_order_==4){
-        sprintf(scheme_OA_,"4th");
+        sprintf(scheme_OA_,"4");
     }else if(scheme_order_==6){
-        sprintf(scheme_OA_,"6th");
+        sprintf(scheme_OA_,"6");
     }else{ _notImplemented("Scheme order"); }
 
     char *case_dir=nullptr;
@@ -198,16 +198,16 @@ void SimData::setup_output_directory(){
     if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const"){
         if(scheme_type_=="implicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"C%dF%d_alpha%1.3f_RK%d"
+                sprintf(case_dir,"C%dF%da%1.3fRK%d"
                         ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"cFD%s_RK%d",scheme_OA_,RK_order_);
+                sprintf(case_dir,"CD%sRK%d",scheme_OA_,RK_order_);
         }else if(scheme_type_=="explicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"F%dF%d_alpha%1.3f_RK%d",scheme_order_,filter_order_
+                sprintf(case_dir,"F%dF%da%1.3fRK%d",scheme_order_,filter_order_
                         ,filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"FD%s_RK%d",scheme_OA_,RK_order_);
+                sprintf(case_dir,"FD%sRK%d",scheme_OA_,RK_order_);
         }else{
             FatalError_exit("Wrong scheme type for space solver");
         }
@@ -215,16 +215,16 @@ void SimData::setup_output_directory(){
     }else if(Sim_mode=="test"){
         if(scheme_type_=="implicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"C%dF%d_alpha%1.3f_RK%d_test"
+                sprintf(case_dir,"C%dF%da%1.3fRK%d_test"
                         ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"cFD%s_RK%d_test",scheme_OA_,RK_order_);
+                sprintf(case_dir,"CD%sRK%d_test",scheme_OA_,RK_order_);
         }else if(scheme_type_=="explicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"F%dF%d_alpha%1.3f_RK%d_test",scheme_order_,filter_order_
+                sprintf(case_dir,"F%dF%da%1.3fRK%d_test",scheme_order_,filter_order_
                         ,filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"FD%s_RK%d_test",scheme_OA_,RK_order_);
+                sprintf(case_dir,"FD%sRK%d_test",scheme_OA_,RK_order_);
         }else{
             FatalError_exit("Wrong scheme type for space solver");
         }

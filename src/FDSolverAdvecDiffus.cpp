@@ -144,7 +144,8 @@ void FDSolverAdvecDiffus::setup_coefficients(){
 
         if(scheme_order_==1){      // first order upwind scheme
 
-            _notImplemented("There is no 1st order stencil defined for advec-diffus");
+            _notImplemented("There is no 1st order stencil defined\
+                            for advec-diffus");
             FatalError_exit("stencil setup");
 
         } else if (scheme_order_==2) { // 2nd order central scheme
@@ -167,7 +168,8 @@ void FDSolverAdvecDiffus::setup_coefficients(){
 
         }else if (scheme_order_==3){
 
-            _notImplemented("There is no 3rd order stencil defined for advec-diffus");
+            _notImplemented("There is no 3rd order stencil defined\
+                            for advec-diffus");
             FatalError_exit("stencil setup");
 
         }else if (scheme_order_==4){ // 4th order central scheme
@@ -289,7 +291,8 @@ void FDSolverAdvecDiffus::setup_coefficients(){
         }
 
     }else{
-        FatalError_exit("Wrong Scheme type for space solver, use either explicit or implicit");
+        FatalError_exit("Wrong Scheme type for space solver,\
+                        use either explicit or implicit");
     }
 
     return;
@@ -305,7 +308,7 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
     radius_advec_ =  max_eigen_advec / dx  ;
     radius_diffus_ = simdata_->thermal_diffus / dx2 ;
 
-    if(simdata_->calc_dt_flag==1){
+    if(simdata_->calc_dt_flag==1){  // sepecify CFL
 
         CFL = simdata_->CFL_;
         if(simdata_->calc_dt_adv_diffus_flag==0)   // based on advection effect only
@@ -320,7 +323,7 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
         last_time_step = time_step;
         simdata_->dt_ = time_step;
 
-    }else if(simdata_->calc_dt_flag==0){
+    }else if(simdata_->calc_dt_flag==0){  // sepcify dt
 
         time_step = simdata_->dt_;
         last_time_step = time_step;
@@ -343,37 +346,43 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
 
     // Determining end of simulation parameters:
     //----------------------------------------------------
-
-    if(simdata_->end_of_sim_flag_==0){
+    double temp_tol=1e-8;
+    if(simdata_->end_of_sim_flag_==0){  // use no. of periods
 
         simdata_->t_end_ = simdata_->Nperiods * T_period;
 
-        simdata_->maxIter_ = (int) ceil(simdata_->t_end_/time_step);
+        simdata_->maxIter_ = (int) floor(simdata_->t_end_/time_step);
 
-        if((simdata_->maxIter_ * time_step) > simdata_->t_end_ ){
+        if((simdata_->maxIter_ * time_step)
+                > (simdata_->Nperiods * T_period) ){
 
-            last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
+            last_time_step = simdata_->t_end_
+                    - ((simdata_->maxIter_-1) * time_step);
 
-        }else if((simdata_->maxIter_ * time_step) < (simdata_->Nperiods * T_period) ){
+        }else if((simdata_->maxIter_ * time_step)
+                 < (simdata_->Nperiods * T_period) ){
 
-            last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
+            last_time_step = simdata_->t_end_
+                    - (simdata_->maxIter_ * time_step);
         }
 
-    }else if(simdata_->end_of_sim_flag_==1){
+    }else if(simdata_->end_of_sim_flag_==1){  // use final time
 
         simdata_->Nperiods = simdata_->t_end_/T_period;
-        simdata_->maxIter_ = (int) ceil(simdata_->t_end_/time_step);
+        simdata_->maxIter_ = (int) floor(simdata_->t_end_/time_step);
 
-        if((simdata_->maxIter_ * time_step) > simdata_->t_end_ ){
+        if((simdata_->maxIter_ * time_step)
+                > (simdata_->t_end_-temp_tol) ){
 
             last_time_step = simdata_->t_end_ - ((simdata_->maxIter_-1) * time_step);
 
-        }else if((simdata_->maxIter_ * time_step) < simdata_->t_end_ ){
+        }else if((simdata_->maxIter_ * time_step)
+                 < (simdata_->t_end_+temp_tol) ){
 
             last_time_step = simdata_->t_end_ - (simdata_->maxIter_ * time_step);
         }
 
-    }else if(simdata_->end_of_sim_flag_==2){
+    }else if(simdata_->end_of_sim_flag_==2){  // use no. of iterations
 
         simdata_->t_end_ = simdata_->maxIter_ * time_step;
         simdata_->Nperiods = simdata_->t_end_/T_period;
@@ -417,12 +426,14 @@ void FDSolverAdvecDiffus::InitSol(){
 
             if(simdata_->wave_form_==3){
                 Q_init[j][k] =eval_init_u_decay_burger_turb(grid_->X[j]);
-                if(fabs(Q_init[j][k])>max_eigen_advec) max_eigen_advec = fabs(Q_init[j][k]);
+                if(fabs(Q_init[j][k])>max_eigen_advec)
+                    max_eigen_advec = fabs(Q_init[j][k]);
             }
             else{
                 Q_init[j][k] = eval_init_sol(grid_->X[j]);
                 if(simdata_->wave_form_==2){
-                    if(fabs(Q_init[j][k])>max_eigen_advec) max_eigen_advec = fabs(Q_init[j][k]);
+                    if(fabs(Q_init[j][k])>max_eigen_advec)
+                        max_eigen_advec = fabs(Q_init[j][k]);
                 }else{
                     max_eigen_advec=simdata_->a_wave_;
                 }
