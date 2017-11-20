@@ -225,11 +225,11 @@ void FDSolverAdvecDiffus::setup_coefficients(){
             FD_coeff [6] =  -1.0/60.0;
 
             FD_coeff_2nd [0] =   1.0/90.0;
-            FD_coeff_2nd [1] =   0.15;
+            FD_coeff_2nd [1] =   -0.15;
             FD_coeff_2nd [2] =   1.50;
             FD_coeff_2nd [3] =  -49.0/18.0;
             FD_coeff_2nd [4] =   1.50;
-            FD_coeff_2nd [5] =   0.15;
+            FD_coeff_2nd [5] =   -0.15;
             FD_coeff_2nd [6] =   1.0/90.0;
         }
 
