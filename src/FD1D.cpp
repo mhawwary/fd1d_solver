@@ -30,7 +30,7 @@ void test_pade_filter();
 void test_pade_filter(){
 
     register int i;
-    int nnodes_=50;
+    int nnodes_=25;
     int n_linsys = nnodes_-2;
     double **Q=nullptr;
     double *x=nullptr;
@@ -44,13 +44,13 @@ void test_pade_filter(){
         x[i]   = dx * (i)  + x0 ;  // node 0, element i
 
         Q[i] = new double[1];
-        Q[i][0] = 1.00;
+        Q[i][0] = sin(6*PI*x[i]);
     }
 
     filter_solver = new PadeFilter;
     std::string bound_type = "Periodic";
     filter_solver->setup_filter(8,nnodes_
-                                ,0.10,bound_type);
+                                ,0.40,bound_type);
 
 
     printf("\n Unfiltered Q: \n");
@@ -58,13 +58,14 @@ void test_pade_filter(){
         printf("%1.2f \t %1.5f\n",x[i],Q[i][0]);
     printf("===============================================\n");
 
-    filter_solver->filtered_sol(Q);
+    for(i=0; i<25; i++)
+        filter_solver->filtered_sol(Q);
 
     //Q[n_linsys][0] = Q[0][0];
 
     printf("\n Filtered Q: \n");
     for(i=0; i<nnodes_; i++)
-        printf("%1.2f \t %1.5f\n",x[i],Q[i][0]);
+        printf("%1.2f \t %1.10f\n",x[i],Q[i][0]);
 
     emptyarray(nnodes_,Q);
     emptyarray(x);
@@ -298,7 +299,7 @@ void RunSim(){
     // main solution loop:
     if(simdata.unsteady_data_print_flag_==0
             || simdata.unsteady_data_print_flag_==1){
-        while ( gtime < (simdata.t_end_-(1+1e-5)*(dt_+1e-10))){
+        while ( fabs(gtime - simdata.t_end_) > (dt_+temp_tol) ){
             time_solver->SolveOneStep(fd_solver->GetNumSolution());
             time_solver->space_solver->UpdatePhyTime(dt_);
             gtime=fd_solver->GetPhyTime();
@@ -340,12 +341,15 @@ void RunSim(){
         dt_last_print = fd_solver->GetLastTimeStep();
         time_solver->Set_time_step(dt_last_print);
         time_solver->SolveOneStep(fd_solver->GetNumSolution());
+
         if(dt_last_print>=temp_tol)
             time_solver->space_solver->UpdatePhyTime(dt_last_print);
         else
             time_solver->space_solver->UpdatePhyTime(dt_);
 
         fd_solver->dump_timeaccurate_sol();
+        gtime=fd_solver->GetPhyTime();
+        printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
     }
 
     return;
@@ -355,6 +359,7 @@ void PostProcess(){
 
     double L1_error_=fd_solver->L1_error_nodal_sol();
     double L2_error_=fd_solver->L2_error_nodal_sol();
+    double dissip_error = fd_solver->dissipation_error();
 
     fd_solver->print_cont_vertex_sol();
 
@@ -362,8 +367,8 @@ void PostProcess(){
 
     printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
     printf("Final time is: %1.2f\n",fd_solver->GetPhyTime());
-    printf("nodal_L1_Error: %e , nodal_L2_Error: %e\n\n"
-           ,L1_error_,L2_error_);
+    printf("nodal_L1_Error: %e , nodal_L2_Error: %e , dissip_Error: %e\n\n"
+           ,L1_error_,L2_error_, dissip_error);
 
     return;
 }

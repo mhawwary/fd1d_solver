@@ -20,6 +20,7 @@ public:
 
    virtual double L1_error_nodal_sol();
    virtual double L2_error_nodal_sol();
+   virtual double dissipation_error(){}
 
    virtual void print_cont_vertex_sol();
    virtual void dump_errors(double &L1_error_, double &L2_error_);

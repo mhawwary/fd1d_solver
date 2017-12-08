@@ -25,6 +25,7 @@ public:
 
    virtual double L1_error_nodal_sol()=0;
    virtual double L2_error_nodal_sol()=0;
+   virtual double dissipation_error()=0;
 
    void UpdatePhyTime(const double& dt_){
 

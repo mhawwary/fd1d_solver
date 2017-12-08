@@ -64,7 +64,7 @@ struct SimData {
     int filter_activate_flag_=0;
     double filter_alpha_=0.0;
     // ./advec_eqn:
-    int upwind_biased_=1;
+    int upwind_biased_=0;   // no. of biased points = downstream - upstream
     // ./heat_eqn:
     double thermal_diffus=1.0;
 

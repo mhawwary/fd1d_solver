@@ -50,8 +50,13 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
             Nghost_r=2;
 
         }else if(scheme_order_==6){
-            Nghost_l=3;
-            Nghost_r=3;
+            if(simdata_->upwind_biased_==2){ // 2-point biased
+                Nghost_l=4;
+                Nghost_r=2;
+            }else if(simdata_->upwind_biased_==0){ // central
+                Nghost_l=3;
+                Nghost_r=3;
+            }
         }
 
     }else if(scheme_type_=="implicit"){
@@ -198,16 +203,43 @@ void FDSolverAdvecDiffus::setup_coefficients(){
             FD_coeff_2nd [3] =   4.0/3.0;
             FD_coeff_2nd [4] =  -1.0/12.0;
 
-        }else if (scheme_order_==6){ // 6th order central scheme
+        }else if (scheme_order_==6){ // 6th order FD scheme
+            // Frist derivative
+            if(simdata_->upwind_biased_==0) {  // central
+                stencil_index[0] =  3;
+                stencil_index[1] =  2;
+                stencil_index[2] =  1;
+                stencil_index[3] =  0;
+                stencil_index[4] = -1;
+                stencil_index[5] = -2;
+                stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
 
-            stencil_index[0] =  3;
-            stencil_index[1] =  2;
-            stencil_index[2] =  1;
-            stencil_index[3] =  0;
-            stencil_index[4] = -1;
-            stencil_index[5] = -2;
-            stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+                FD_coeff [0] =   1.0/60.0;
+                FD_coeff [1] =  -0.15;
+                FD_coeff [2] =   0.75;
+                FD_coeff [3] =   0.00;
+                FD_coeff [4] =  -0.75;
+                FD_coeff [5] =   0.15;
+                FD_coeff [6] =  -1.0/60.0;
 
+            }else if(simdata_->upwind_biased_==2) {  // 2-point biased
+                stencil_index[0] =  2;
+                stencil_index[1] =  1;
+                stencil_index[2] =  0;
+                stencil_index[3] = -1;
+                stencil_index[4] = -2;
+                stencil_index[5] = -3;
+                stencil_index[6] = -4;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+
+                FD_coeff [0] =  -1.0/30.0;
+                FD_coeff [1] =  0.40;
+                FD_coeff [2] =  7.0/12.0;
+                FD_coeff [3] =  -4.0/3.0;
+                FD_coeff [4] =  0.50;
+                FD_coeff [5] =  -2.0/15.0;
+                FD_coeff [6] =  1.0/60.0;
+            }
+            // 2nd derivative
             stencil_index_2nd[0] = stencil_index[0];
             stencil_index_2nd[1] = stencil_index[1];
             stencil_index_2nd[2] = stencil_index[2];
@@ -215,14 +247,6 @@ void FDSolverAdvecDiffus::setup_coefficients(){
             stencil_index_2nd[4] = stencil_index[4];
             stencil_index_2nd[5] = stencil_index[5];
             stencil_index_2nd[6] = stencil_index[6];
-
-            FD_coeff [0] =   1.0/60.0;
-            FD_coeff [1] =  -0.15;
-            FD_coeff [2] =   0.75;
-            FD_coeff [3] =   0.00;
-            FD_coeff [4] =  -0.75;
-            FD_coeff [5] =   0.15;
-            FD_coeff [6] =  -1.0/60.0;
 
             FD_coeff_2nd [0] =   1.0/90.0;
             FD_coeff_2nd [1] =   -0.15;

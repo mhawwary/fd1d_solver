@@ -37,21 +37,31 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
 
         }else if(scheme_order_==3){
 
-            if(simdata_->upwind_biased_==1){
+            if(simdata_->upwind_biased_==1){ // 1-point biased
                 Nghost_l=2;
                 Nghost_r=1;
-            }else if(simdata_->upwind_biased_==0){
+            }else if(simdata_->upwind_biased_==0){ // fully-upwind
                 Nghost_l=3;
                 Nghost_r=0;
             }
 
         }else if(scheme_order_==4){
-            Nghost_l=2;
-            Nghost_r=2;
+            if(simdata_->upwind_biased_==2){ // 2-point biased
+                Nghost_l=3;
+                Nghost_r=1;
+            }else if(simdata_->upwind_biased_==0){ // central
+                Nghost_l=2;
+                Nghost_r=2;
+            }
 
         }else if(scheme_order_==6){
-            Nghost_l=3;
-            Nghost_r=3;
+            if(simdata_->upwind_biased_==2){ // 2-point biased
+                Nghost_l=4;
+                Nghost_r=2;
+            }else if(simdata_->upwind_biased_==0){ // central
+                Nghost_l=3;
+                Nghost_r=3;
+            }
         }
 
     }else if(scheme_type_=="implicit"){
@@ -154,7 +164,7 @@ void FDSolverAdvec::setup_coefficients(){
 
         }else if (scheme_order_==3){
 
-            if(simdata_->upwind_biased_==0) {  //for 3rd order fully upwind:
+            if(simdata_->upwind_biased_==0) {  // fully upwind:
                 stencil_index[0] =  0;
                 stencil_index[1] = -1;
                 stencil_index[2] = -2;
@@ -165,7 +175,7 @@ void FDSolverAdvec::setup_coefficients(){
                 FD_coeff [2] =   3.0/2.0;
                 FD_coeff [3] =  -1.0/3.0;
 
-            }else if(simdata_->upwind_biased_==1){ // for 3rd order upwind biased :
+            }else if(simdata_->upwind_biased_==1){ // 1-point biased :
                 stencil_index[0] =  1;
                 stencil_index[1] =  0;
                 stencil_index[2] = -1;
@@ -196,21 +206,39 @@ void FDSolverAdvec::setup_coefficients(){
 
         }else if (scheme_order_==6){ // 6th order central scheme
 
-            stencil_index[0] =  3;
-            stencil_index[1] =  2;
-            stencil_index[2] =  1;
-            stencil_index[3] =  0;
-            stencil_index[4] = -1;
-            stencil_index[5] = -2;
-            stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+            if(simdata_->upwind_biased_==0) {  // central
+                stencil_index[0] =  3;
+                stencil_index[1] =  2;
+                stencil_index[2] =  1;
+                stencil_index[3] =  0;
+                stencil_index[4] = -1;
+                stencil_index[5] = -2;
+                stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
 
-            FD_coeff [0] =   1.0/60.0;
-            FD_coeff [1] =  -0.15;
-            FD_coeff [2] =   0.75;
-            FD_coeff [3] =   0.00;
-            FD_coeff [4] =  -0.75;
-            FD_coeff [5] =   0.15;
-            FD_coeff [6] =  -1.0/60.0;
+                FD_coeff [0] =   1.0/60.0;
+                FD_coeff [1] =  -0.15;
+                FD_coeff [2] =   0.75;
+                FD_coeff [3] =   0.00;
+                FD_coeff [4] =  -0.75;
+                FD_coeff [5] =   0.15;
+                FD_coeff [6] =  -1.0/60.0;
+            }else if(simdata_->upwind_biased_==2) {  // 2-point biased
+                stencil_index[0] =  2;
+                stencil_index[1] =  1;
+                stencil_index[2] =  0;
+                stencil_index[3] = -1;
+                stencil_index[4] = -2;
+                stencil_index[5] = -3;
+                stencil_index[6] = -4;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+
+                FD_coeff [0] =  -1.0/30.0;
+                FD_coeff [1] =  0.40;
+                FD_coeff [2] =  7.0/12.0;
+                FD_coeff [3] =  -4.0/3.0;
+                FD_coeff [4] =  0.50;
+                FD_coeff [5] =  -2.0/15.0;
+                FD_coeff [6] =  1.0/60.0;
+            }
         }
     }else if(scheme_type_ == "implicit"){
         register int i;
@@ -629,6 +657,32 @@ double FDSolverAdvec::L2_error_nodal_sol(){
     L2_error = sqrt(L2_error/Nfaces);
 
     return L2_error;
+}
+
+double FDSolverAdvec::dissipation_error(){
+
+    register int j;
+
+    double dissip_error=0.0, Qn_aver=0.0
+            , Qex_aver=0.0, Qn_var=0.0, Qex_var=0.0;
+
+    for(j=0; j<Nfaces; j++){
+        Qn_aver  += Qn[j+Nghost_l][0];
+        Qex_aver += Q_exact[j][0];
+    }
+    Qn_aver = Qn_aver/Nfaces;
+    Qex_aver = Qex_aver/ Nfaces;
+
+    for(j=0; j<Nfaces; j++){
+        Qn_var += pow((Qn[j+Nghost_l][0]-Qn_aver),2);
+        Qex_var += pow((Q_exact[j][0]-Qex_aver),2);
+    }
+    Qn_var = sqrt(Qn_var/Nfaces);
+    Qex_var = sqrt(Qex_var/Nfaces);
+
+    dissip_error = sqrt(pow((Qn_var-Qex_var),2) + pow((Qn_aver-Qex_aver),2));
+
+    return dissip_error;
 }
 
 void FDSolverAdvec::print_cont_vertex_sol(){

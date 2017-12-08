@@ -60,7 +60,7 @@ void SimData::Parse(const std::string &fname){
     filter_activate_flag_ = gp_input("space_solver/filter_activate_flag",0);
     filter_alpha_=gp_input("space_solver/filter_alpha",0.40);
     // ./advec_eqn:
-    upwind_biased_=gp_input("space_solver/advec_eqn/upwind_biased",1);
+    upwind_biased_=gp_input("space_solver/advec_eqn/upwind_biased",0);
     // ./heat_eqn:
     thermal_diffus
             = gp_input("space_solver/heat_eqn/thermal_diffusivity",1.0);
@@ -194,8 +194,8 @@ void SimData::setup_output_directory(){
     }else{ _notImplemented("Scheme order"); }
 
     char *case_dir=nullptr;
-    case_dir=new char[70];
-    if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const"){
+    case_dir=new char[80];
+    if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const" ){
         if(scheme_type_=="implicit"){
             if(filter_activate_flag_==1)
                 sprintf(case_dir,"C%dF%da%1.3fRK%d"
@@ -230,6 +230,10 @@ void SimData::setup_output_directory(){
         }
 
     }else _notImplemented("Simulation mode");
+
+//    if(wave_form_==3){  // burgers decay turbulence
+//        sprintf(case_dir,"%s_um%1.0f",case_dir,velocity_mean_);
+//    }
 
     char *main_dir=nullptr;
     main_dir = new char[25];
