@@ -19,5 +19,5 @@ t_plot =  Decimal(t_plot.quantize(Decimal('.001')))
 
 if eqn_type=='linear_advec':
     temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, t_plot, sol_dir, exact_sol_dir)
-else:
+elif eqn_type=='visc_burger':
     decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, t_plot, sol_dir)

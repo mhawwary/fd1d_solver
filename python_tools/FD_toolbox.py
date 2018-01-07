@@ -11,6 +11,7 @@ import csv
 
 from subprocess import call, run, PIPE, Popen
 from sys_cmd_toolbox import system_process    # locally defined file
+from fft_toolbox_python_new import load_data, compute_fft, compute_Etotal
 
 plt.rc('legend',**{'loc':'upper right'});
 plt.rcParams[u'legend.fontsize'] = 15
@@ -113,6 +114,8 @@ def load_sol(fname):
 
 def decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_dir):
 
+    dt =float(dt_);
+    
     if mode=='dt_const':
         sim_name = str('_dt') + dt_
         sim_name1 = str('dt=') + dt_
@@ -167,16 +170,22 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
 
     fname = dir_res+sol_dir+str('_N')+Nelem+sim_name+str('_')+str(tt_)+str('t.dat')
     x_num, u_num = load_sol(fname);
+    k_freq, u_amp, KE = compute_fft(u_num)
+    E_tot = compute_Etotal(k_freq,KE)
+
+    print('u_max: ',max(u_num));
+    print('error: ',abs(1-max(u_num)));
     
     fname = dir_res+'time_data/u_exact_'+str(tt_)+str('t.dat')
     x_exact, u_exact = load_sol(fname);
+    k_freq_exact, u_amp_exact, KE_exact = compute_fft(u_exact)
+    E_ex = compute_Etotal(k_freq_exact,KE_exact)
 
     fig = plt.figure();
     ylim_0 = list();
     ylim_1 = list();
-    ylim_0.append(min(u_num));
-    ylim_1.append(max(u_num));
-    print('u_max: ',max(u_num));
+    ylim_0.append(0.98*min(u_num));
+    ylim_1.append(1.02*max(u_num));
     plt.plot(x_num,u_num,'-or',label=label_); 
     plt.legend();
     plt.xlabel('x',labelpad=10);
@@ -201,7 +210,9 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     plt.xlabel('x',labelpad=10);
     plt.ylabel('u(x)',labelpad=10);
     plt.xlim(min(x_num), max(x_num))
-    plt.ylim(min(ylim_0), max(ylim_1)*1.3)
+    if min(ylim_0)<=1e-5:
+      ylim_0.append(-0.052632);
+    plt.ylim(0.95*min(ylim_0), max(ylim_1)*1.2)
     plt.grid()
     plt.legend()
     fig.tight_layout()
@@ -209,6 +220,38 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     +Nelem+sim_name+str('_')+str(tt_)+str('t_comp.png')
     fig.set_size_inches(15.0, 9.0, forward=True)
     plt.savefig(figname)
+    
+    #================== Plot FFT ==========================#
+    k_max_ = int(k_freq[-1]);
+    print('k_max: ',k_max_, '  k_max_ex: ',int(k_freq_exact[-1]))
+    print('exact Nelem:',size(x_exact))
+    fig, ax = plt.subplots()
+    
+    plt.plot(2*pi*k_freq_exact/int(Nelem), u_amp_exact, '-.k',markevery=1\
+        , label=r'exact, E_${tot}$= '+str(np.round(E_ex,4)))
+    plt.plot(2*pi*k_freq/int(Nelem), u_amp, '-or',markevery=1, \
+        label=label_+r', E$_{tot}$='+str(np.round(E_tot,4)))
+    
+    xlabels = ['0',r'$\pi$/8',r'$\pi$/4',r'$\pi$/2',r'3$\pi$/4',r'$\pi$'];
+    xlocs = [0,pi/8,pi/4,pi/2,3*pi/4,pi];
+    plt.xticks(xlocs, xlabels);
+    plt.xlim(0,pi)
+    plt.legend();
+    plt.xlabel('K/(P+1)', labelpad=2);
+    plt.ylabel('|u|', labelpad=2);
+    plt.grid()
+
+    fig.set_size_inches(13.0, 10.0, forward=True)
+    fig.tight_layout(pad=0.0, w_pad=10.0, h_pad=10.0)
+    
+    figname = dir_res + 'tempfig/'+ 'fft_N'+Nelem\
+    +sim_name+str('_')+str(tt_)+str('t_comp.png')
+    fig.set_size_inches(15.0, 9.0, forward=True)
+    plt.savefig(figname,format='png')
+    figname = dir_res + 'tempfig/'+ 'fft_N'+Nelem\
+    +sim_name+str('_')+str(tt_)+str('t_comp.eps')
+    plt.savefig(figname,format='eps')
+    
     plt.show()
     
     return
