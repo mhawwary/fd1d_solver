@@ -99,11 +99,12 @@ def FD_input_reader(input_file_):
 
     CFL = Decimal(CFL.quantize(Decimal('0.0001')))
     t_end = Decimal(t_end.quantize(Decimal('0.001')))
+    T = Decimal(T.quantize(Decimal('0.001')))
     
     cmd=['mkdir',dir_result+'tempfig/']
     cmd_out,cmd_err=system_process(cmd,1000)
                 
-    return dir_result, mode, eqn_type, scheme_name, FD, RK, Nelem, CFL, dt_, sol_dir, exact_sol_dir
+    return dir_result, mode, eqn_type, scheme_name, FD, RK, Nelem, CFL, dt_, sol_dir, exact_sol_dir,T
   
 def load_sol(fname):
     data= loadtxt(fname);
@@ -157,7 +158,7 @@ def decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL
     
     return
     
-def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_dir, exact_sol_dir):
+def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_dir, exact_sol_dir,T_period):
 
     if mode=='dt_const':
         sim_name = str('_dt') + dt_
@@ -197,7 +198,7 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     +Nelem+sim_name+str('_')+str(tt_)+str('t.png')
     fig.set_size_inches(15.0, 9.0, forward=True)
     plt.savefig(figname)
-    plt.show()
+    #plt.show()
     
     fig = plt.figure();
     ylim_0 = list();
@@ -220,6 +221,31 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     +Nelem+sim_name+str('_')+str(tt_)+str('t_comp.png')
     fig.set_size_inches(15.0, 9.0, forward=True)
     plt.savefig(figname)
+    
+    # Read DG data:
+    res_dir = './Results/'
+    fname = dir_res + 'errors/errors_N'+str(Nelem)+'_CFL'+str(CFL)+'_'+str(T_period)+'T.dat'
+    print('fname, ',fname)
+    data = loadtxt(fname);  # continuous exact nodal solution
+    time  = data[:, 0];
+    L1err = data[:, 1];
+    L2err = data[:, 2];
+
+    fig = plt.figure();
+    
+    plt.plot(time,L1err,'-.b',label=r'L$_{1}$')
+    plt.plot(time, L2err,'-ok',label=r'L$_{2}$')
+    plt.xlabel('time')
+    plt.ylabel('Errors')
+    plt.legend(loc='upper left')
+    
+    figname = dir_res + 'tempfig/'+ 'errors_N'+Nelem\
+    +sim_name+str('_')+str(T_period)+str('T.png')
+    fig.set_size_inches(15.0, 9.0, forward=True)
+    plt.savefig(figname,format='png')
+    figname = dir_res + 'tempfig/'+ 'errors_N'+Nelem\
+    +sim_name+str('_')+str(T_period)+str('T.eps')
+    plt.savefig(figname,format='eps')
     
     #================== Plot FFT ==========================#
     k_max_ = int(k_freq[-1]);
