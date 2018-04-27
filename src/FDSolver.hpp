@@ -86,7 +86,8 @@ public:
 
    virtual void print_cont_vertex_sol()=0;
    virtual void dump_errors(double &L1_error_, double &L2_error_)=0;
-   virtual void   dump_timeaccurate_sol()=0;
+   virtual void dump_timeaccurate_sol()=0;
+   virtual void dump_timeaccurate_errors()=0;
 
    virtual void filter_solution(double **qn_)=0;
 
@@ -151,6 +152,7 @@ protected:
 
    double exact_sol_shift=0.;
    double wave_length_=0.;
+   double wave_speed_=0.0;
    double T_period=1;
 
    int Nfaces=1;

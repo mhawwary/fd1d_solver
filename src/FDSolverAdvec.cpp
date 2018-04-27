@@ -88,6 +88,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     Q_init  =  new double* [Nfaces];
     Q_exact =  new double* [Nfaces];
     Q_exact_pp = new double*[grid_->N_exact_ppts];
+    //qq_exact_time = new double*[Nfaces];
 
     register int i;
 
@@ -97,6 +98,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     for(i=0; i<Nfaces; i++){
         Q_init[i] = new double[Ndof];
         Q_exact[i] = new double[Ndof];
+        //qq_exact_time[i] = new double[Ndof];
     }
 
     for(i=0; i<grid_->N_exact_ppts; i++)
@@ -105,8 +107,13 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     setup_coefficients();
 
     SetPhyTime(simdata_->t_init_);
-    //CalcTimeStep();
+
+    //Wave data:
+    wave_length_ = simdata_->xf_-simdata_->x0_;
+    wave_speed_ = simdata_->a_wave_;
     ComputeExactSolShift();
+
+    //Compute exact solutions at time 0
     Compute_exact_sol();
     Compute_exact_sol_for_plot();
 
@@ -119,6 +126,7 @@ void FDSolverAdvec::Reset_solver(){
     emptyarray(grid_->N_exact_ppts,Q_exact_pp);
     emptyarray(Nfaces,Q_init);
     emptyarray(Nfaces,Q_exact);
+    //emptyarray(Nfaces,qq_exact_time);
 
     emptyarray(stencil_index);
     emptyarray(FD_coeff);
@@ -382,9 +390,7 @@ void FDSolverAdvec::CalcTimeStep(){
 void FDSolverAdvec::InitSol(){
 
     register int j;
-
     int k=0;
-
     max_eigen_advec = simdata_->a_wave_;
 
     if(simdata_->eqn_type_=="linear_advec"){
@@ -407,21 +413,13 @@ void FDSolverAdvec::InitSol(){
             }
         }
     }
-
     CalcTimeStep();
+
     return;
 }
 
 void FDSolverAdvec::ComputeExactSolShift(){
-
-    // Preparing shift information:
-    //-------------------------------
-    double a=0.;
-
-    wave_length_ = grid_->xf - grid_->x0 ;
-    a = simdata_->a_wave_;
-    exact_sol_shift = (a * simdata_->t_end_ );
-
+    exact_sol_shift = wave_speed_*phy_time;
     return;
 }
 
@@ -507,12 +505,12 @@ void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
 }
 
 void FDSolverAdvec::filter_solution(double **qn_){
-        filter->filtered_sol(&qn_[Nghost_l]);  // filtering the solution
+    filter->filtered_sol(&qn_[Nghost_l]);  // filtering the solution
     return;
 }
 
 void FDSolverAdvec::compute_RHS_f1_implicit(const double& Idx_, double** qn_
-                                                  , double*& RHS_temp_){
+                                            , double*& RHS_temp_){
     // Calculation of the RHS for the f' equation:
     //-----------------------------------------------
     register int i;
@@ -553,6 +551,8 @@ void FDSolverAdvec::Compute_exact_sol_for_plot(){
     double xx=0.0;
     double x0,x1;
 
+    ComputeExactSolShift();
+
     if(simdata_->wave_form_==1){
 
         for(j=0; j<grid_->N_exact_ppts; j++){
@@ -570,11 +570,11 @@ void FDSolverAdvec::Compute_exact_sol_for_plot(){
 
     }else if(simdata_->wave_form_==0){
 
-       for(j=0; j<grid_->N_exact_ppts; j++){
+        for(j=0; j<grid_->N_exact_ppts; j++){
 
-            xx = grid_->x_exact_ppts[j]- exact_sol_shift;
+            xx = grid_->x_exact_ppts[j]-  exact_sol_shift;
             Q_exact_pp[j][0] = eval_init_sol(xx);
-       }
+        }
 
     }
 
@@ -584,16 +584,14 @@ void FDSolverAdvec::Compute_exact_sol_for_plot(){
 void FDSolverAdvec::Compute_exact_sol(){
 
     register int j;
-
     double xx=0.0;
     double x0,x1;
 
-    if(simdata_->wave_form_==1){
+    ComputeExactSolShift();
 
+    if(simdata_->wave_form_==1){  // Gaussian wave
         for(j=0; j<Nfaces; j++){
-
             xx = grid_->X[j] - exact_sol_shift;
-
             x0 = xx - wave_length_*floor(xx/wave_length_);
             x1 = xx + wave_length_*floor(xx/-wave_length_);
 
@@ -602,19 +600,41 @@ void FDSolverAdvec::Compute_exact_sol(){
             else
                 Q_exact[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
         }
-
-    }else if(simdata_->wave_form_==0){
-
-       for(j=0; j<Nfaces; j++){
-
+    }else if(simdata_->wave_form_==0){ // sine wave
+        for(j=0; j<Nfaces; j++){
             xx = grid_->X[j]- exact_sol_shift;
             Q_exact[j][0] = eval_init_sol(xx);
-       }
-
+        }
     }
-
     return;
+}
 
+void FDSolverAdvec::Compute_TimeAccurate_exact_sol(){
+
+    register int j;
+    double xx=0.0;
+    double x0,x1;
+
+    ComputeExactSolShift();
+
+    if(simdata_->wave_form_==1){
+        for(j=0; j<Nfaces; j++){
+            xx = grid_->X[j] - exact_sol_shift;
+            x0 = xx - wave_length_*floor(xx/wave_length_);
+            x1 = xx + wave_length_*floor(xx/-wave_length_);
+
+            if(x0==0 && x1==0)
+                Q_exact[j][0] = 0.5*(eval_init_sol(x0)+ eval_init_sol(x1));
+            else
+                Q_exact[j][0] = (eval_init_sol(x0)+ eval_init_sol(x1));
+        }
+    }else if(simdata_->wave_form_==0){
+        for(j=0; j<Nfaces; j++){
+            xx = grid_->X[j]- exact_sol_shift;
+            Q_exact[j][0] = eval_init_sol(xx);
+        }
+    }
+    return;
 }
 
 double FDSolverAdvec::eval_init_sol(const double& xx){
@@ -777,6 +797,7 @@ void FDSolverAdvec::dump_timeaccurate_sol(){
     fclose(sol_out);
     emptyarray(fname);
 
+    Compute_exact_sol_for_plot();
     fname = new char[400];
     sprintf(fname,"%stime_data/u_exact_%1.3ft.dat"
             ,simdata_->case_postproc_dir
@@ -790,6 +811,34 @@ void FDSolverAdvec::dump_timeaccurate_sol(){
 
     fclose(sol_out1);
     emptyarray(fname);
+
+    return;
+}
+
+void FDSolverAdvec::dump_timeaccurate_errors(){
+
+    //Compute_TimeAccurate_exact_sol();
+    Compute_exact_sol();
+    double L1_error_=L1_error_nodal_sol();
+    double L2_error_=L2_error_nodal_sol();
+
+    char *fname=nullptr;
+    fname = new char[100];
+    sprintf(fname,"%serrors/errors_N%d_CFL%1.4f_%1.3fT.dat"
+            ,simdata_->case_postproc_dir
+            ,grid_->Nelem
+            ,CFL
+            ,simdata_->Nperiods);
+
+    FILE* solerror_out=fopen(fname,"at+");
+
+    fprintf(solerror_out, "%1.10f %2.10e %2.10e\n"
+            ,phy_time, L1_error_, L2_error_);
+
+    fclose(solerror_out);
+    emptyarray(fname);
+
+    printf("\tL1_time_proj: %2.5e\t L2_time_proj: %2.5e",L1_error_,L2_error_);
 
     return;
 }
@@ -873,26 +922,50 @@ void FDSolverAdvec::dump_errors(double &L1_error_, double &L2_error_){
     return;
 }
 
+//void FDSolverAdvec::dump_errors_vs_time(double &L1_error_, double &L2_error_){
 
+//    char *fname=nullptr;
+//    fname = new char[100];
 
+//    sprintf(fname,"%serrors/time_err_CFL%1.3f_%1.3fT.dat"
+//            ,simdata_->case_postproc_dir
+//            ,CFL
+//            ,simdata_->Nperiods);
 
+//    FILE* solerror_out=fopen(fname,"at+");
 
+//    fprintf(solerror_out, "%1.10f %2.10e %2.10e\n"
+//            ,phy_time, L1_error_, L2_error_);
 
+//    fclose(solerror_out);
+//    emptyarray(fname);
 
+//    return;
+//}
 
+//double FDSolverAdvec::L1_error_time_nodal_sol(){
+//    register int j;
+//    double L1_error=0.0;
 
+//    for(j=0; j<Nfaces; j++)
+//        L1_error += fabs(Q_exact[j][0] - Qn[j+Nghost_l][0]);
 
+//    L1_error = L1_error/Nfaces;
 
+//    return L1_error;
+//}
 
+//double FDSolverAdvec::L2_error_time_nodal_sol(){
+//    register int j;
+//    double L2_error=0.0;
 
+//    for(j=0; j<Nfaces; j++)
+//        L2_error += pow((Q_exact[j][0] - Qn[j+Nghost_l][0]),2);
 
+//    L2_error = sqrt(L2_error/Nfaces);
 
-
-
-
-
-
-
+//    return L2_error;
+//}
 
 
 

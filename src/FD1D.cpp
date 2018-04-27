@@ -11,6 +11,7 @@
 void InitSim(const int& argc, char** argv);
 void RunSim();
 void PostProcess();
+//void Dump_errors_vs_time();
 void check_divergence(int& check_div_,int& check_conv_
                       ,const double& threshold, const double& conv_tol
                       , double** Qn_, double& Q_max, double& Q_sum);
@@ -95,15 +96,15 @@ int main(int argc, char** argv){
 
     RunSim();
 
-    if(simdata.wave_form_!=3){
-        PostProcess();
-    }else{
-        printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
-        printf("Final time is: %1.5f\n",fd_solver->GetPhyTime());
-    }
+    //    if(simdata.wave_form_!=3){
+    //        PostProcess();
+    //    }else{
+    //        printf("\nFinal Iteration number is: %d\n",time_solver->GetIter());
+    //        printf("Final time is: %1.5f\n",fd_solver->GetPhyTime());
+    //    }
 
     clock_t t_end=clock();
-    cout << "Elapsed Time: " << 1.0*(t_end-t_start)/CLOCKS_PER_SEC
+    cout << "\n\nElapsed Time: " << 1.0*(t_end-t_start)/CLOCKS_PER_SEC
          << " seconds\n" <<endl;
 
     emptypointer(meshdata);
@@ -141,15 +142,19 @@ void InitSim(const int& argc,char** argv){
 
         fd_solver->setup_solver(meshdata,simdata);
         fd_solver->InitSol();
-        fd_solver->dump_timeaccurate_sol();
         time_solver = new ExplicitTimeSolver;
         time_solver->setupTimeSolver(fd_solver,&simdata);
+        printf("\nIter No:%d, time: %f",time_solver->GetIter()
+               ,fd_solver->GetPhyTime());
+        fd_solver->dump_timeaccurate_sol();
+        fd_solver->dump_timeaccurate_errors();
         simdata.dump_python_inputfile();
 
-//        if(simdata.filter_activate_flag_==1){
-//            filter_solver = new PadeFilter;
-//            filter_solver->setup_filter(fd_solver->GetNfaces(),simdata);
-//        }
+
+        //        if(simdata.filter_activate_flag_==1){
+        //            filter_solver = new PadeFilter;
+        //            filter_solver->setup_filter(fd_solver->GetNfaces(),simdata);
+        //        }
 
         //setup_stencil();
         //init_solution();
@@ -158,11 +163,11 @@ void InitSim(const int& argc,char** argv){
 
     } else if(simdata.restart_flag==1){
         printf("\nReading Restart Data\n");
-//        BinaryDataReading();
-//        generate_grid();
-//        setup_stencil();
-//        init_sol_fromFile();
-//        iter_init = restart_iter_;
+        //        BinaryDataReading();
+        //        generate_grid();
+        //        setup_stencil();
+        //        init_sol_fromFile();
+        //        iter_init = restart_iter_;
 
     }else {
         FatalError_exit("Wrong restart flag");
@@ -173,7 +178,7 @@ void InitSim(const int& argc,char** argv){
 
 void RunSim(){
 
-/*    int n_iter_print;
+    /*    int n_iter_print;
 //    int local_iter=0;
 //    double dt_last_print=0.0;
 //    //int check_div_=0,check_conv_=0;
@@ -293,6 +298,8 @@ void RunSim(){
     if(n_iter_print==1){
         printf("\nIter No:%d, time: %f",time_solver->GetIter(),gtime);
         fd_solver->dump_timeaccurate_sol();
+        fd_solver->dump_timeaccurate_errors();
+        //Dump_errors_vs_time(); // for evolution of error vs time
         local_iter=0;
     }
 
@@ -316,6 +323,8 @@ void RunSim(){
                 gtime=fd_solver->GetPhyTime();
                 printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
                 fd_solver->dump_timeaccurate_sol();
+                fd_solver->dump_timeaccurate_errors();
+                //Dump_errors_vs_time(); // for evolution of error vs time
                 time_solver->Set_time_step(dt_);
                 //time_solver->Reset_iter(time_solver->GetIter()-1);
                 local_iter=0;
@@ -333,6 +342,8 @@ void RunSim(){
             if(local_iter%n_iter_print==0){
                 printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
                 fd_solver->dump_timeaccurate_sol();
+                fd_solver->dump_timeaccurate_errors();
+                //Dump_errors_vs_time(); // for evolution of error vs time
                 local_iter=0;
             }
         }
@@ -341,19 +352,20 @@ void RunSim(){
         dt_last_print = fd_solver->GetLastTimeStep();
         time_solver->Set_time_step(dt_last_print);
         time_solver->SolveOneStep(fd_solver->GetNumSolution());
-
         if(dt_last_print>=temp_tol)
             time_solver->space_solver->UpdatePhyTime(dt_last_print);
         else
             time_solver->space_solver->UpdatePhyTime(dt_);
 
-        fd_solver->dump_timeaccurate_sol();
         gtime=fd_solver->GetPhyTime();
         printf("\nIter No:%d, time: %1.5f",time_solver->GetIter(),gtime);
+        fd_solver->dump_timeaccurate_sol();
+        fd_solver->dump_timeaccurate_errors();
     }
 
     return;
 }
+
 
 void PostProcess(){
 
@@ -401,11 +413,11 @@ void check_divergence(int& check_div_, int& check_conv_,const double& threshold
 void check_convergence(int& check_conv_, double& Q_sum){
 
     register int i,j;
-//    Q_sum = 0.0;
-//    for(i=Nghost_l; i<Nfaces; i++){
-//        Q_sum+= fabs(Qn[i]);
-//    }
-//    if(Q_sum <= 1e-10) check_conv_=1;
+    //    Q_sum = 0.0;
+    //    for(i=Nghost_l; i<Nfaces; i++){
+    //        Q_sum+= fabs(Qn[i]);
+    //    }
+    //    if(Q_sum <= 1e-10) check_conv_=1;
     return;
 }
 
@@ -424,7 +436,17 @@ void logo(){
 }
 
 
+//void Dump_errors_vs_time(){
 
+//    double L1_error_=fd_solver->L1_error_time_nodal_sol();
+//    double L2_error_=fd_solver->L2_error_time_nodal_sol();
+
+//    fd_solver->dump_errors_vs_time(L1_error_,L2_error_);
+
+//    printf("\tL1_time_proj: %2.5e\t L2_time_proj: %2.5e",L1_error_,L2_error_);
+
+//    return;
+//}
 
 
 

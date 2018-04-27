@@ -21,9 +21,12 @@ public:
    virtual double L1_error_nodal_sol();
    virtual double L2_error_nodal_sol();
    virtual double dissipation_error(){}
+   //virtual double L1_error_time_nodal_sol(){}
+   //virtual double L2_error_time_nodal_sol(){}
 
    virtual void print_cont_vertex_sol();
    virtual void dump_errors(double &L1_error_, double &L2_error_);
+   //virtual void dump_errors_vs_time(double &L1_error_, double &L2_error_){}
 
    virtual void setup_coefficients();
 
@@ -39,6 +42,7 @@ public:
    virtual void Compute_exact_sol();
    virtual void Compute_exact_sol_for_plot();
    virtual void dump_timeaccurate_sol();
+   virtual void dump_timeaccurate_errors(){}
    virtual void filter_solution(double **qn_);
 
 protected:
