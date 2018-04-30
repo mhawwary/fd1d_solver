@@ -96,6 +96,16 @@ def FD_input_reader(input_file_):
             scheme_name = 'F' + FD + 'F'+ filOA + r'$^{'+str(alpha_filter)+'}$' + ' and RK'+ RK
         elif(filter_flag==0):
             scheme_name = 'FD'+FD + '-RK'+ RK
+    elif(scheme_type=='DRP4s7'):
+        if(filter_flag==1):
+            scheme_name = 'DRP4s7'+ 'F'+ filOA + r'$^{'+str(alpha_filter)+'}$' + ' and RK'+ RK
+        elif(filter_flag==0):
+            scheme_name = 'DRP4s7'+ '-RK'+ RK
+    elif(scheme_type=='Rem2s7'):
+        if(filter_flag==1):
+            scheme_name = 'Rem2s7'+ 'F'+ filOA + r'$^{'+str(alpha_filter)+'}$' + ' and RK'+ RK
+        elif(filter_flag==0):
+            scheme_name = 'Rem2s7'+ '-RK'+ RK
 
     CFL = Decimal(CFL.quantize(Decimal('0.0001')))
     t_end = Decimal(t_end.quantize(Decimal('0.001')))
@@ -185,7 +195,7 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     fig = plt.figure();
     ylim_0 = list();
     ylim_1 = list();
-    ylim_0.append(0.98*min(u_num));
+    ylim_0.append(1.02*min(u_num));
     ylim_1.append(1.02*max(u_num));
     plt.plot(x_num,u_num,'-or',label=label_); 
     plt.legend();
@@ -211,9 +221,12 @@ def temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL, dt_, tt_, sol_
     plt.xlabel('x',labelpad=10);
     plt.ylabel('u(x)',labelpad=10);
     plt.xlim(min(x_num), max(x_num))
-    if min(ylim_0)<=1e-5:
-      ylim_0.append(-0.052632);
-    plt.ylim(0.95*min(ylim_0), max(ylim_1)*1.2)
+    # for gaussian
+    #if min(ylim_0)<=1e-5:
+     # ylim_0.append(-0.052632);
+    #plt.ylim(0.95*min(ylim_0), max(ylim_1)*1.2)
+    #for sine wave
+    plt.ylim(1.05*min(ylim_0), max(ylim_1)*1.05)
     plt.grid()
     plt.legend()
     fig.tight_layout()
