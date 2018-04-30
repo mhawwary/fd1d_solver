@@ -52,7 +52,7 @@ protected:
    void Compute_TimeAccurate_exact_sol();
 
 protected:
-   // for implicit FD:
+   // for implicit/Compact FD:
    double *alpha_vec_f1_ =nullptr;  // vector of alpha_f1_, f'
    double *b_vec_ =nullptr;      // vector of 1 ones on each A matrix diagonal
 

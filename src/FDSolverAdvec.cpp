@@ -30,13 +30,15 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
         if(scheme_order_==1){
             Nghost_l = 1;
             Nghost_r=0;
+            stencil_width_=2;
 
         }else if(scheme_order_==2){
             Nghost_l=1;
             Nghost_r=1;
+            stencil_width_=3;
 
         }else if(scheme_order_==3){
-
+            stencil_width_=4;
             if(simdata_->upwind_biased_==1){ // 1-point biased
                 Nghost_l=2;
                 Nghost_r=1;
@@ -46,6 +48,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
             }
 
         }else if(scheme_order_==4){
+            stencil_width_=5;
             if(simdata_->upwind_biased_==2){ // 2-point biased
                 Nghost_l=3;
                 Nghost_r=1;
@@ -55,6 +58,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
             }
 
         }else if(scheme_order_==6){
+            stencil_width_=7;
             if(simdata_->upwind_biased_==2){ // 2-point biased
                 Nghost_l=4;
                 Nghost_r=2;
@@ -63,6 +67,35 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
                 Nghost_r=3;
             }
         }
+
+    }else if(scheme_type_=="DRP4s7"
+             || scheme_type_=="Rem2s7"){ //Tamwebb1993 & LindersNordstrom2015, central schemes
+        Nghost_l=3;
+        Nghost_r=3;
+        stencil_width_=7;
+        if(scheme_type_=="DRP4s7")
+            scheme_order_=4;
+        else
+            scheme_order_=2;
+    }else if(scheme_type_=="BB4s9"
+             || scheme_type_=="Rem2s9"){ //BogeyBailly2004 & LindersNordstrom2015, central schemes
+        Nghost_l=4;
+        Nghost_r=4;
+        stencil_width_=9;
+        if(scheme_type_=="BB4s9")
+            scheme_order_=4;
+        else
+            scheme_order_=2;
+    }else if(scheme_type_=="BB4s11"){ //BogeyBailly2004, central schemes
+        Nghost_l=5;
+        Nghost_r=5;
+        stencil_width_=11;
+        scheme_order_=4;
+    }else if(scheme_type_=="BB4s13"){ //BogeyBailly2004, central schemes
+        Nghost_l=6;
+        Nghost_r=6;
+        stencil_width_=13;
+        scheme_order_=4;
 
     }else if(scheme_type_=="implicit"){
         if(scheme_order_==4){
@@ -98,7 +131,6 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     for(i=0; i<Nfaces; i++){
         Q_init[i] = new double[Ndof];
         Q_exact[i] = new double[Ndof];
-        //qq_exact_time[i] = new double[Ndof];
     }
 
     for(i=0; i<grid_->N_exact_ppts; i++)
@@ -149,23 +181,19 @@ void FDSolverAdvec::Reset_solver(){
 void FDSolverAdvec::setup_coefficients(){
 
     if(scheme_type_ == "explicit"){
-        stencil_index = new int[scheme_order_+1];
-        FD_coeff = new double [scheme_order_+1];
+        stencil_index = new int[stencil_width_];
+        FD_coeff = new double [stencil_width_];
 
         if(scheme_order_==1){      // first order upwind scheme
-
             stencil_index[0] =  0;
             stencil_index[1] = -1;           //[j,j-1];
-
             FD_coeff [0] =  1;
             FD_coeff [1] = -1;
 
         } else if (scheme_order_==2) { // 2nd order central scheme
-
             stencil_index[0] =  1;
             stencil_index[1] =  0;
             stencil_index[2] = -1;           //[j+1,j,j-1];
-
             FD_coeff [0] =  0.5;
             FD_coeff [1] =  0.0;
             FD_coeff [2] = -0.5;
@@ -177,7 +205,6 @@ void FDSolverAdvec::setup_coefficients(){
                 stencil_index[1] = -1;
                 stencil_index[2] = -2;
                 stencil_index[3] = -3;  // [j,j-1,j-2,j-3];
-
                 FD_coeff [0] =  11.0/6.0;
                 FD_coeff [1] =  -3.0;
                 FD_coeff [2] =   3.0/2.0;
@@ -188,7 +215,6 @@ void FDSolverAdvec::setup_coefficients(){
                 stencil_index[1] =  0;
                 stencil_index[2] = -1;
                 stencil_index[3] = -2;  //[j+1,j,j-1,j-2];
-
                 FD_coeff [0] =  1.0/3.0;
                 FD_coeff [1] =  0.5;
                 FD_coeff [2] = -1.0;
@@ -199,13 +225,11 @@ void FDSolverAdvec::setup_coefficients(){
             }
 
         }else if (scheme_order_==4){ // 4th order central scheme
-
             stencil_index[0] =  2;
             stencil_index[1] =  1;
             stencil_index[2] =  0;
             stencil_index[3] = -1;
             stencil_index[4] = -2;  //[j+2,j+1,j,j-1,j-2];
-
             FD_coeff [0] =  -1.0/12.0;
             FD_coeff [1] =   2.0/3.0;
             FD_coeff [2] =   0.0;
@@ -248,6 +272,38 @@ void FDSolverAdvec::setup_coefficients(){
                 FD_coeff [6] =  1.0/60.0;
             }
         }
+
+    }else if(scheme_type_=="DRP4s7"
+             || scheme_type_=="Rem2s7"){
+        stencil_index = new int[stencil_width_];
+        FD_coeff = new double [stencil_width_];
+        stencil_index[0] =  3;
+        stencil_index[1] =  2;
+        stencil_index[2] =  1;
+        stencil_index[3] =  0;
+        stencil_index[4] = -1;
+        stencil_index[5] = -2;
+        stencil_index[6] = -3;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+
+        if(scheme_order_==4||scheme_type_=="DRP4s7"){ //DRP4s7 TamWebb1993
+            //Coefficient are from Cunha2014, Sjorgeen2017 optimized for K[0,1.1]
+            FD_coeff [0] =   0.77088238051822552;
+            FD_coeff [1] =  -0.166705904414580469;
+            FD_coeff [2] =   0.02084314277031176;
+            FD_coeff [3] =   0.00;
+            FD_coeff [4] =  -0.02084314277031176;
+            FD_coeff [5] =   0.166705904414580469;
+            FD_coeff [6] =  -0.77088238051822552;
+        }else if(scheme_order_==2||scheme_type_=="Rem2s7"){ //Rem2s7, LindersNordstrom2015
+            FD_coeff [0] =   0.78028389;
+            FD_coeff [1] =  -0.17585010;
+            FD_coeff [2] =   0.02380544;
+            FD_coeff [3] =   0.00;
+            FD_coeff [4] =  -0.02380544;
+            FD_coeff [5] =   0.17585010;
+            FD_coeff [6] =  -0.78028389;
+        }
+
     }else if(scheme_type_ == "implicit"){
         register int i;
         n_linsys = Nfaces-1;
@@ -459,7 +515,7 @@ void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
     for(i=0; i<Nfaces; i++){
         for(k=0; k<Ndof; k++){
             temp=0.0;
-            for(j=0; j<scheme_order_+1; j++){
+            for(j=0; j<stencil_width_; j++){
                 s = stencil_index[j];
                 temp += qn_[i+Nghost_l+s][k] * FD_coeff[j];
             }
@@ -468,7 +524,9 @@ void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
         }
     }*/
 
-    if(scheme_type_=="explicit"){
+    if(scheme_type_=="explicit"
+            || scheme_type_=="DRP4s7"
+            || scheme_type_=="Rem2s7"){
         // Nodes loop to calculate and update the residual:
         //----------------------------------------------------
         int j=0,s1;
@@ -477,7 +535,7 @@ void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
         for(i=0; i<Nfaces; i++){
             for(k=0; k<Ndof; k++){
                 temp_inv=0.0;
-                for(j=0; j<scheme_order_+1; j++){
+                for(j=0; j<stencil_width_; j++){
                     s1 = stencil_index[j];
                     invFlux = evaluate_inviscid_flux(qn_[i+Nghost_l+s1][k]);
                     temp_inv  += invFlux * FD_coeff[j];

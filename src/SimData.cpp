@@ -179,19 +179,9 @@ void SimData::setup_output_directory(){
 
     case_postproc_dir =new char[350];
 
-    char scheme_OA_[20];
-    if(scheme_order_==1){
-        sprintf(scheme_OA_,"1");
-    }else if(scheme_order_==2){
-        sprintf(scheme_OA_,"2");
-    }else if(scheme_order_==3){
-        if(upwind_biased_==1) sprintf(scheme_OA_,"3rd_biased");
-        else sprintf(scheme_OA_,"3rd_fupwind");
-    }else if(scheme_order_==4){
-        sprintf(scheme_OA_,"4");
-    }else if(scheme_order_==6){
-        sprintf(scheme_OA_,"6");
-    }else{ _notImplemented("Scheme order"); }
+    char bias_keyword_[5];
+
+    if(upwind_biased_!=0) sprintf(bias_keyword_,"_upw");
 
     char *case_dir=nullptr;
     case_dir=new char[80];
@@ -201,13 +191,42 @@ void SimData::setup_output_directory(){
                 sprintf(case_dir,"C%dF%da%1.3fRK%d"
                         ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"CD%sRK%d",scheme_OA_,RK_order_);
+                sprintf(case_dir,"CD%dRK%d",scheme_order_,RK_order_);
         }else if(scheme_type_=="explicit"){
-            if(filter_activate_flag_==1)
-                sprintf(case_dir,"F%dF%da%1.3fRK%d",scheme_order_,filter_order_
-                        ,filter_alpha_,RK_order_);
-            else
-                sprintf(case_dir,"FD%sRK%d",scheme_OA_,RK_order_);
+            if(filter_activate_flag_==1){
+                if(upwind_biased_!=0)
+                    sprintf(case_dir,"F%dF%da%1.3fRK%d%s",scheme_order_,filter_order_
+                            ,filter_alpha_,RK_order_,bias_keyword_);
+                else
+                    sprintf(case_dir,"F%dF%da%1.3fRK%d",scheme_order_,filter_order_
+                            ,filter_alpha_,RK_order_);
+            }else{
+                if(upwind_biased_!=0)
+                    sprintf(case_dir,"FD%dRK%d%s",scheme_order_,RK_order_,bias_keyword_);
+                else
+                    sprintf(case_dir,"FD%dRK%d",scheme_order_,RK_order_);
+            }
+
+        }else if(scheme_type_=="DRP4s7"){
+            sprintf(case_dir,"DRP4s7RK%d",RK_order_);
+            scheme_order_==4;
+            stencil_width_=6;
+        }else if(scheme_type_=="Rem2s7"){
+            sprintf(case_dir,"Rem2s7RK%d",RK_order_);
+            scheme_order_==2;
+            stencil_width_=6;
+        }else if(scheme_type_=="Rem2s9"){
+            sprintf(case_dir,"Rem2s9RK%d",RK_order_);
+            FatalError_exit( "Rem2s9 scheme is not implemented yet");
+        }else if(scheme_type_=="BB4s9"){
+            sprintf(case_dir,"BB4s9RK%d",RK_order_);
+            FatalError_exit( "BB4s9 scheme is not implemented yet");
+        }else if(scheme_type_=="BB4s11"){
+            sprintf(case_dir,"BB4s11RK%d",RK_order_);
+            FatalError_exit( "BB4s11 scheme is not implemented yet");
+        }else if(scheme_type_=="BB4s13"){
+            sprintf(case_dir,"BB4s13RK%d",RK_order_);
+            FatalError_exit( "BB4s13 scheme is not implemented yet");
         }else{
             FatalError_exit("Wrong scheme type for space solver");
         }
@@ -218,22 +237,40 @@ void SimData::setup_output_directory(){
                 sprintf(case_dir,"C%dF%da%1.3fRK%d_test"
                         ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"CD%sRK%d_test",scheme_OA_,RK_order_);
+                sprintf(case_dir,"CD%dRK%d_test",scheme_order_,RK_order_);
         }else if(scheme_type_=="explicit"){
             if(filter_activate_flag_==1)
                 sprintf(case_dir,"F%dF%da%1.3fRK%d_test",scheme_order_,filter_order_
                         ,filter_alpha_,RK_order_);
             else
-                sprintf(case_dir,"FD%sRK%d_test",scheme_OA_,RK_order_);
+                sprintf(case_dir,"FD%dRK%d_test",scheme_order_,RK_order_);
+
+        }else if(scheme_type_=="DRP4s7"){
+            sprintf(case_dir,"DRP4s7RK%d_test",RK_order_);
+            scheme_order_==4;
+            stencil_width_=6;
+        }else if(scheme_type_=="Rem2s7"){
+            sprintf(case_dir,"Rem2s7RK%d_test",RK_order_);
+            scheme_order_==2;
+            stencil_width_=6;
+        }else if(scheme_type_=="Rem2s9"){
+            sprintf(case_dir,"Rem2s9RK%d_test",RK_order_);
+            FatalError_exit( "Rem2s9 scheme is not implemented yet");
+        }else if(scheme_type_=="BB4s9"){
+            sprintf(case_dir,"BB4s9RK%d_test",RK_order_);
+            FatalError_exit( "BB4s9 scheme is not implemented yet");
+        }else if(scheme_type_=="BB4s11"){
+            sprintf(case_dir,"BB4s11RK%d_test",RK_order_);
+            FatalError_exit( "BB4s11 scheme is not implemented yet");
+        }else if(scheme_type_=="BB4s13"){
+            sprintf(case_dir,"BB4s13RK%d_test",RK_order_);
+            FatalError_exit( "BB4s13 scheme is not implemented yet");
         }else{
             FatalError_exit("Wrong scheme type for space solver");
         }
 
     }else _notImplemented("Simulation mode");
 
-//    if(wave_form_==3){  // burgers decay turbulence
-//        sprintf(case_dir,"%s_um%1.0f",case_dir,velocity_mean_);
-//    }
 
     char *main_dir=nullptr;
     main_dir = new char[25];
@@ -292,8 +329,6 @@ void SimData::setup_output_directory(){
         chdir(case_dir);
     }
 
-    //sprintf(case_postproc_dir,"./%s/%s/%s/",main_dir,case_title,case_dir);
-
     mkdir("./nodal",0777);
     mkdir("./errors",0777);
     mkdir("./time_data",0777);
@@ -307,7 +342,6 @@ void SimData::setup_output_directory(){
     emptyarray(current_working_dir);
     emptyarray(case_dir);
     emptyarray(main_dir);
-//    emptyarray(case_title);
     emptyarray(results_dir);
 
     return;

@@ -115,6 +115,8 @@ protected:
    std::string scheme_type_;
    int scheme_order_=1;
    int stencil_width_=1;
+   
+   //Filters parameters:
    std::string filter_type_;
    int filter_order_=1;
    int filter_activate_flag =0;

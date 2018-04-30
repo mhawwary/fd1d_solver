@@ -59,6 +59,7 @@ struct SimData {
     std::string eqn_type_;  // inv_burger / linear_advec / linear_diffus
     std::string scheme_type_; // explicit(classical)/implicit(compact)
     int scheme_order_=0;    // FD Scheme order
+    int stencil_width_=1; // for explicit and DRP FD schemes
     std::string filter_type_;   // pade(compact) /
     int filter_order_=0;
     int filter_activate_flag_=0;
