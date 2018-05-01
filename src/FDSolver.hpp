@@ -6,6 +6,7 @@
 #include"general_tools.h"
 #include"global_var.h"
 #include"solver_tools.h"
+#include"filter.hpp"
 
 //struct SimData;
 //struct GridData;
@@ -112,12 +113,18 @@ protected:
    GridData *grid_=nullptr;
    SimData *simdata_=nullptr;
 
+   //Scheme parameters
    std::string scheme_type_;
    int scheme_order_=1;
-   int stencil_width_=1;
-   std::string filter_type_;
-   int filter_order_=1;
-   int filter_activate_flag =0;
+   int stencil_width_=1;   //scheme stencil width
+
+   // filter parameters
+   Filter *filter=nullptr;
+   double filter_alpha_=0.0;
+   std::string filter_type_;  // filter type
+   int filter_order_=1;        // for implicit
+   int filter_activate_flag =0;  //0: no filter
+   int filter_stencil_size_=1;  // the size of the filter stencil for explicit filters
 
    // explicit (classical) FD parameters:
    int *stencil_index=nullptr;

@@ -57,6 +57,7 @@ void SimData::Parse(const std::string &fname){
     scheme_order_=gp_input("space_solver/order",1);
     filter_type_ = gp_input("space_solver/filter_type","pade");
     filter_order_=gp_input("space_solver/filter_order",1);
+    filter_stencil_size_=gp_input("space_solver/filter_stencil_size",1);
     filter_activate_flag_ = gp_input("space_solver/filter_activate_flag",0);
     filter_alpha_=gp_input("space_solver/filter_alpha",0.40);
     // ./advec_eqn:
@@ -180,6 +181,16 @@ void SimData::setup_output_directory(){
     case_postproc_dir =new char[350];
 
     char bias_keyword_[5];
+    char filter_keyword_[15];  //F for compact, BF for Bogey, SF for standard
+
+    if(filter_activate_flag_==1){
+        if(filter_type_=="pade")
+            sprintf(filter_keyword_,"CF%da%1.3f",filter_order_,filter_alpha_);
+        else if(filter_type_=="BogeyBailly")
+            sprintf(filter_keyword_,"BF%da%1.2f",filter_stencil_size_,filter_alpha_);
+        else if(filter_type_=="standard")
+            sprintf(filter_keyword_,"SF%da%1.2f",filter_stencil_size_,filter_alpha_);
+    }
 
     if(upwind_biased_!=0) sprintf(bias_keyword_,"_upw");
 
@@ -188,18 +199,17 @@ void SimData::setup_output_directory(){
     if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const" ){
         if(scheme_type_=="implicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"C%dF%da%1.3fRK%d"
-                        ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
+                sprintf(case_dir,"C%d%sRK%d"
+                        ,scheme_order_,filter_keyword_,RK_order_);
             else
                 sprintf(case_dir,"CD%dRK%d",scheme_order_,RK_order_);
         }else if(scheme_type_=="explicit"){
             if(filter_activate_flag_==1){
                 if(upwind_biased_!=0)
-                    sprintf(case_dir,"F%dF%da%1.3fRK%d%s",scheme_order_,filter_order_
-                            ,filter_alpha_,RK_order_,bias_keyword_);
+                    sprintf(case_dir,"F%d%sRK%d%s",scheme_order_,filter_keyword_
+                            ,RK_order_,bias_keyword_);
                 else
-                    sprintf(case_dir,"F%dF%da%1.3fRK%d",scheme_order_,filter_order_
-                            ,filter_alpha_,RK_order_);
+                    sprintf(case_dir,"F%d%sRK%d",scheme_order_,filter_keyword_,RK_order_);
             }else{
                 if(upwind_biased_!=0)
                     sprintf(case_dir,"FD%dRK%d%s",scheme_order_,RK_order_,bias_keyword_);
@@ -208,15 +218,24 @@ void SimData::setup_output_directory(){
             }
 
         }else if(scheme_type_=="DRP4s7"){
-            sprintf(case_dir,"DRP4s7RK%d",RK_order_);
-            scheme_order_==4;
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"DRP4s7%sRK%d",filter_keyword_,RK_order_);
+            else
+                sprintf(case_dir,"DRP4s7RK%d",RK_order_);
+            scheme_order_=4;
             stencil_width_=6;
         }else if(scheme_type_=="Rem2s7"){
-            sprintf(case_dir,"Rem2s7RK%d",RK_order_);
-            scheme_order_==2;
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"Rem2s7%sRK%d",filter_keyword_,RK_order_);
+            else
+                sprintf(case_dir,"Rem2s7RK%d",RK_order_);
+            scheme_order_=2;
             stencil_width_=6;
         }else if(scheme_type_=="Rem2s9"){
-            sprintf(case_dir,"Rem2s9RK%d",RK_order_);
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"Rem2s9%sRK%d",filter_keyword_,RK_order_);
+            else
+                sprintf(case_dir,"Rem2s9RK%d",RK_order_);
             FatalError_exit( "Rem2s9 scheme is not implemented yet");
         }else if(scheme_type_=="BB4s9"){
             sprintf(case_dir,"BB4s9RK%d",RK_order_);
@@ -234,24 +253,30 @@ void SimData::setup_output_directory(){
     }else if(Sim_mode=="test"){
         if(scheme_type_=="implicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"C%dF%da%1.3fRK%d_test"
-                        ,scheme_order_,filter_order_, filter_alpha_,RK_order_);
+                sprintf(case_dir,"C%d%sRK%d_test"
+                        ,scheme_order_,filter_keyword_,RK_order_);
             else
                 sprintf(case_dir,"CD%dRK%d_test",scheme_order_,RK_order_);
         }else if(scheme_type_=="explicit"){
             if(filter_activate_flag_==1)
-                sprintf(case_dir,"F%dF%da%1.3fRK%d_test",scheme_order_,filter_order_
-                        ,filter_alpha_,RK_order_);
+                sprintf(case_dir,"F%d%sRK%d_test"
+                        ,scheme_order_,filter_keyword_,RK_order_);
             else
                 sprintf(case_dir,"FD%dRK%d_test",scheme_order_,RK_order_);
 
         }else if(scheme_type_=="DRP4s7"){
-            sprintf(case_dir,"DRP4s7RK%d_test",RK_order_);
-            scheme_order_==4;
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"DRP4s7%sRK%d_test",filter_keyword_,RK_order_);
+            else
+                sprintf(case_dir,"DRP4s7RK%d_test",RK_order_);
+            scheme_order_=4;
             stencil_width_=6;
         }else if(scheme_type_=="Rem2s7"){
-            sprintf(case_dir,"Rem2s7RK%d_test",RK_order_);
-            scheme_order_==2;
+            if(filter_activate_flag_==1)
+                sprintf(case_dir,"Rem2s7%sRK%d_test",filter_keyword_,RK_order_);
+            else
+                sprintf(case_dir,"Rem2s7RK%d_test",RK_order_);
+            scheme_order_=2;
             stencil_width_=6;
         }else if(scheme_type_=="Rem2s9"){
             sprintf(case_dir,"Rem2s9RK%d_test",RK_order_);

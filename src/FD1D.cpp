@@ -50,7 +50,7 @@ void test_pade_filter(){
 
     filter_solver = new PadeFilter;
     std::string bound_type = "Periodic";
-    filter_solver->setup_filter(8,nnodes_
+    filter_solver->setup_filter(simdata.filter_type_,8,nnodes_
                                 ,0.40,bound_type);
 
 
@@ -285,8 +285,10 @@ void RunSim(){
         FatalError_exit("unsteady data print flag error");
     }
 
-    printf("\nnIter to print unsteady data: %d, dt_last: %1.5e"
+    printf("\n----------------------------------------------------------\n");
+    printf("nIter to print unsteady data: %d, dt_last: %1.5e"
            ,n_iter_print, dt_last_print);
+    printf("\n----------------------------------------------------------\n");
 
     // First Solve:
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());

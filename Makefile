@@ -3,7 +3,7 @@
 
 COMP	= GCC
 TECIO	= NO
-CODE	= RELEASE
+CODE	= DEBUG
 OPENMP	= NO
 
 # Specifing Standard Variables:
@@ -63,7 +63,7 @@ vpath %.h include src
 vpath %.hpp include src
 
 # Objects
-OBJS	= $(OBJ)GridData.o $(OBJ)FD1D.o $(OBJ)SimData.o $(OBJ)FDSolverAdvec.o $(OBJ)FDSolverAdvecDiffus.o $(OBJ)ExplicitTimeSolver.o $(OBJ)solver_tools.o $(OBJ)PadeFilter.o # objects 
+OBJS	= $(OBJ)GridData.o $(OBJ)FD1D.o $(OBJ)SimData.o $(OBJ)FDSolverAdvec.o $(OBJ)FDSolverAdvecDiffus.o $(OBJ)ExplicitTimeSolver.o $(OBJ)solver_tools.o $(OBJ)PadeFilter.o $(OBJ)explicitfilter.o # objects 
 INCLS	= 
 
 # Compile
@@ -95,6 +95,7 @@ $(OBJ)FDSolverAdvecDiffus.o: FDSolverAdvecDiffus.cpp
 $(OBJ)ExplicitTimeSolver.o: ExplicitTimeSolver.cpp
 $(OBJ)solver_tools.o: solver_tools.c
 $(OBJ)PadeFilter.o: PadeFilter.cpp
+$(OBJ)explicitfilter.o: explicitfilter.cpp
 
 clean:
 	rm -f ./$(OBJ)*.o ./$(BIN)*.exe 

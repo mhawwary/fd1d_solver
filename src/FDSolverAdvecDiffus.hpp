@@ -3,6 +3,8 @@
 
 #include "FDSolver.hpp"
 #include "PadeFilter.hpp"
+#include"filter.hpp"
+#include"explicitfilter.hpp"
 
 
 class FDSolverAdvecDiffus:public FDSolver{
@@ -66,7 +68,7 @@ protected:
    double *RHS_f1_=nullptr;
    double *RHS_f2_=nullptr;
 
-   PadeFilter *filter=nullptr;
+   //Filter *filter=nullptr;
    double filter_alpha_=0.0;
 //   double *Qn_filt=nullptr; // one D array of nodal solutions
 

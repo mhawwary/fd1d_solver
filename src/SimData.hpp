@@ -60,8 +60,9 @@ struct SimData {
     std::string scheme_type_; // explicit(classical)/implicit(compact)
     int scheme_order_=0;    // FD Scheme order
     int stencil_width_=1; // for explicit and DRP FD schemes
-    std::string filter_type_;   // pade(compact) /
-    int filter_order_=0;
+    std::string filter_type_;   // pade(compact) / BogeyBailly(explicit) / standard(explicit)
+    int filter_order_=1;        // for pade filters
+    int filter_stencil_size_=1; //for explicit filters
     int filter_activate_flag_=0;
     double filter_alpha_=0.0;
     // ./advec_eqn:

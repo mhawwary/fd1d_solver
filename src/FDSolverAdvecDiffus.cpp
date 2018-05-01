@@ -75,8 +75,8 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
     if(filter_activate_flag==1){
         filter = new PadeFilter;
         std::string Bound_type = "Periodic";
-        filter->setup_filter(filter_order_,Nfaces,filter_alpha_
-                             ,Bound_type);
+        filter->setup_filter(simdata_->filter_type_,filter_order_,Nfaces
+                             ,filter_alpha_,Bound_type);
     }
 
     Qn      =  new double* [Nfaces_tot];
