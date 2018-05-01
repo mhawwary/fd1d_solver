@@ -136,7 +136,7 @@ void ExplicitFilter::filtered_sol(double** qn_temp_){
 
     update_unfiltered_sol(qn_temp_);
 
-   // perform filtering and excludes boundary points
+    //perform filtering and excludes boundary points
 
     register int i=0; int j,s1;
     double II=0.0;
