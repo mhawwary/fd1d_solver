@@ -33,6 +33,7 @@ public:
    virtual void setup_coefficients();
 
    virtual void update_ghost_sol(double **Qn_);
+   virtual void update_previousTimelevelSolution(double **Qn_){} // Qnm1 at n-1
 
    virtual double eval_init_sol(const double& xx);
 

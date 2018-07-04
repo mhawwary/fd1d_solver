@@ -1,5 +1,5 @@
 [Case]
- title = gaussian_wd1   # sine wave / Gaussian / .....
+ title = gaussian_aviation  # sine wave / Gaussian / .....
  num_elements = 36
  x_begin = -1.0
  x_end = 1.0
@@ -9,7 +9,7 @@
 
 [Simulation]
  unsteady_data_print_flag = 2   # 0: use iter , 1: use time
- unsteady_data_print_iter  = 500000 # iter no. for print of unsteady data 
+ unsteady_data_print_iter  = 100 # iter no. for print of unsteady data 
  unsteady_data_print_time  = 0.100  # time point for print of unsteady data
  convergence_tolerance = 1e-16
  divergence_threshold = 20
@@ -42,27 +42,28 @@
 [space_solver]
   eqn_set = Advection  # Advection / Diffusion / Advection_Diffusion
   eqn_type = linear_advec # inv_burger / linear_advec / linear_diffus
-  scheme_type = explicit # explicit(classical)/implicit(compact)
-  order = 6
-  filter_type = pade    # pade(compact) / 
+  scheme_type = implicit # explicit(classical)/implicit(compact)/DRP4s7/BB4s9/BB4s11/BB4s13/Rem2s7/Rem2s9
+  order = 6              
+  filter_type = standard  # pade(compact) / BogeyBailly(explicit) / standard(explicit)
   filter_order = 8
   filter_activate_flag = 0
-  filter_alpha = 0.49
+  filter_alpha = 0.1
+  filter_stencil_size = 9
   
   [./advec_eqn]
-   upwind_biased = 0  # no. of upwind-biased points. If '0' then it is a fully upwind scheme or central scheme
+   upwind_biased = 2  # no. of upwind-biased points. If '0' then it is a fully upwind scheme or central scheme
 
   [../heat_eqn]
    thermal_diffusivity = 2e-4
 
 [time_solver]
- calculate_dt_flag = 1 # 0: specify dt and calc CFL, 1: specify CFL and calc dt
+ calculate_dt_flag = 0 # 0: specify dt and calc CFL, 1: specify CFL and calc dt
  calc_dt_adv_diffus_flag = 0 # 0: based on advection, 1: based on diffusion, 2: based on combined advection-diffusion
  CFL_no = 0.3942
- dt = 0.01
+ dt = 5e-4
  initial_time = 0.000
- final_time = 2.00
- no_of_periods = 30000.0 #  period = (xf-x0) / wave_speed
+ final_time = 50.00
+ no_of_periods = 1.0 #  period = (xf-x0) / wave_speed
  maximum_iteration = 1e5
  
  end_of_simulation_flag = 0

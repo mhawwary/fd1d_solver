@@ -97,6 +97,7 @@ protected:
    virtual void setup_coefficients()=0;
 
    virtual void update_ghost_sol(double **Qn_)=0;
+   virtual void update_previousTimelevelSolution(double **Qn_)=0; // Qnm1 at n-1
 
    virtual double eval_init_sol(const double& xx)=0;
 
@@ -140,7 +141,9 @@ protected:
 
    int Ndof = 1;
 
-   double **Qn=nullptr;      // Nfaces_tot * Ndof long
+   double **Qn=nullptr;      // Nfaces_tot * Ndof long at n level
+
+//   double **Qnm1=nullptr;      // Nfaces_tot * Ndof long at n-1 level
 
    double **Qn_true=nullptr; // Nfaces * Ndof long
 
