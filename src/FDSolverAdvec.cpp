@@ -195,8 +195,8 @@ void FDSolverAdvec::setup_coefficients(){
         if(scheme_order_==1){      // first order upwind scheme
             stencil_index[0] =  0;
             stencil_index[1] = -1;           //[j,j-1];
-            FD_coeff [0] =  1;
-            FD_coeff [1] = -1;
+            FD_coeff [0] =  1.0;
+            FD_coeff [1] = -1.0;
 
         } else if (scheme_order_==2) { // 2nd order central scheme
             stencil_index[0] =  1;
@@ -444,8 +444,10 @@ void FDSolverAdvec::CalcTimeStep(){
     cout <<"\nMax_iter: "<<simdata_->maxIter_<<endl;
 
     cout << "\nNumber of nodes: "<< grid_->Nfaces<<"  dx:  "<<grid_->dx<<endl;
-    cout << "Scheme  order : "<< simdata_->scheme_order_  << endl;
-    cout << "Runge-Kutta order : "<< simdata_->RK_order_    << endl;
+    cout << "Scheme  order    : "<< simdata_->scheme_order_  << endl;
+    cout << "Time scheme type : "<< simdata_->time_scheme_type_<<endl;
+    if(simdata_->time_scheme_type_=="RungeKutta")
+        cout << "Runge-Kutta order: "<< simdata_->RK_order_    << endl;
     cout <<"===============================================\n";
 
     return;
@@ -517,20 +519,6 @@ void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
     update_ghost_sol(qn_);
     // Nodes loop to calculate and update the residual:
     //----------------------------------------------------
-
-    /*int j=0,s;
-    double temp=0.0;
-    for(i=0; i<Nfaces; i++){
-        for(k=0; k<Ndof; k++){
-            temp=0.0;
-            for(j=0; j<stencil_width_; j++){
-                s = stencil_index[j];
-                temp += qn_[i+Nghost_l+s][k] * FD_coeff[j];
-            }
-
-            Resid_[i][k] = - temp * Idx;
-        }
-    }*/
 
     if(scheme_type_=="explicit"
             || scheme_type_=="DRP4s7"

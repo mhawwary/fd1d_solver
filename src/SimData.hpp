@@ -81,6 +81,8 @@ struct SimData {
     unsigned int maxIter_ = 1e6; // maximum number of iterations
     double Nperiods = 1.0; // no. of periods for simulation
     int end_of_sim_flag_=0;  // 1: use max_iteration as a stopping criteria if not converged or diverged
+    std::string time_scheme_type_; // leapfrog/RungeKutta
+    std::string time_solver_type_; // explicit/implicit
     // ./explicit:
     int RK_order_=0;        // Runge-Kutta type (0: euler FT, 2: SSPRK22, 3: SSPRK33)
     //------------------------------------------------------------------

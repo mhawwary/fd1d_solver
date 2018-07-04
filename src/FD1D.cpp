@@ -6,6 +6,7 @@
 #include"FDSolverAdvec.hpp"
 #include"FDSolverAdvecDiffus.hpp"
 #include"ExplicitTimeSolver.hpp"
+#include"TimeSolver.hpp"
 
 
 void InitSim(const int& argc, char** argv);
@@ -23,7 +24,7 @@ void logo();
 SimData   simdata;
 GridData *meshdata;
 FDSolver *fd_solver;
-ExplicitTimeSolver *time_solver;
+TimeSolver *time_solver;
 PadeFilter *filter_solver;
 
 void test_pade_filter();
@@ -142,7 +143,8 @@ void InitSim(const int& argc,char** argv){
 
         fd_solver->setup_solver(meshdata,simdata);
         fd_solver->InitSol();
-        time_solver = new ExplicitTimeSolver;
+        if(simdata.time_solver_type_=="explicit") // Runge-Kutta
+            time_solver = new ExplicitTimeSolver;
         time_solver->setupTimeSolver(fd_solver,&simdata);
         printf("\nIter No:%d, time: %f",time_solver->GetIter()
                ,fd_solver->GetPhyTime());
