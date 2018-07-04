@@ -68,6 +68,9 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
             Nghost_l=2;
             Nghost_r=2;
         }
+    }else{
+        _notImplemented("The current scheme type is not implemented yet");
+        FatalError_exit("Exiting the simulation");
     }
 
     Nfaces_tot = Nghost_l + Nfaces + Nghost_r;
@@ -75,8 +78,8 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
     if(filter_activate_flag==1){
         filter = new PadeFilter;
         std::string Bound_type = "Periodic";
-        filter->setup_filter(filter_order_,Nfaces,filter_alpha_
-                             ,Bound_type);
+        filter->setup_filter(simdata_->filter_type_,filter_order_,Nfaces
+                             ,filter_alpha_,Bound_type);
     }
 
     Qn      =  new double* [Nfaces_tot];
@@ -114,6 +117,7 @@ void FDSolverAdvecDiffus::Reset_solver(){
     emptyarray(grid_->N_exact_ppts,Q_exact_pp);
     emptyarray(Nfaces,Q_init);
     emptyarray(Nfaces,Q_exact);
+    //emptyarray(Nfaces,Qnm1);
 
     emptyarray(stencil_index);
     emptyarray(FD_coeff);
@@ -141,17 +145,32 @@ void FDSolverAdvecDiffus::Reset_solver(){
 void FDSolverAdvecDiffus::setup_coefficients(){
 
     if(scheme_type_ == "explicit"){
-        stencil_index = new int[scheme_order_+1];
-        FD_coeff = new double [scheme_order_+1];
 
-        stencil_index_2nd = new int[scheme_order_+1];
-        FD_coeff_2nd = new double [scheme_order_+1];
+        if(scheme_order_>1){
+            stencil_index = new int[scheme_order_+1];
+            FD_coeff = new double [scheme_order_+1];
 
-        if(scheme_order_==1){      // first order upwind scheme
+            stencil_index_2nd = new int[scheme_order_+1];
+            FD_coeff_2nd = new double [scheme_order_+1];
+        }
 
-            _notImplemented("There is no 1st order stencil defined\
-                            for advec-diffus");
-            FatalError_exit("stencil setup");
+        if(scheme_order_==1){      // 1st order upwind scheme for du/dx, 2nd order for du2/dx2
+            stencil_index = new int[2];
+            FD_coeff = new double [2];
+            stencil_index_2nd = new int[3];
+            FD_coeff_2nd = new double [3];
+
+            stencil_index[0] =  0;
+            stencil_index[1] =  -1;
+            FD_coeff [0] =  1.0;
+            FD_coeff [1] =  -1.0;
+
+            stencil_index_2nd[0] =  1;
+            stencil_index_2nd[1] =  0;
+            stencil_index_2nd[2] = -1;
+            FD_coeff_2nd [0] =  1.0;
+            FD_coeff_2nd [1] = -2.0;
+            FD_coeff_2nd [2] =  1.0;
 
         } else if (scheme_order_==2) { // 2nd order central scheme
 
@@ -175,7 +194,7 @@ void FDSolverAdvecDiffus::setup_coefficients(){
 
             _notImplemented("There is no 3rd order stencil defined\
                             for advec-diffus");
-            FatalError_exit("stencil setup");
+                            FatalError_exit("stencil setup");
 
         }else if (scheme_order_==4){ // 4th order central scheme
 
@@ -316,7 +335,7 @@ void FDSolverAdvecDiffus::setup_coefficients(){
 
     }else{
         FatalError_exit("Wrong Scheme type for space solver,\
-                        use either explicit or implicit");
+                        use either explicit, leapfrog, or implicit");
     }
 
     return;
@@ -435,7 +454,9 @@ void FDSolverAdvecDiffus::CalcTimeStep(){
 
     cout << "\nNumber of nodes: "<< grid_->Nfaces<<"  dx:  "<<grid_->dx<<endl;
     cout << "Scheme  order    : "<< simdata_->scheme_order_  << endl;
-    cout << "Runge-Kutta order: "<< simdata_->RK_order_    << endl;
+    cout << "Time scheme type : "<< simdata_->time_scheme_type_<<endl;
+    if(simdata_->time_scheme_type_=="RungeKutta")
+        cout << "Runge-Kutta order: "<< simdata_->RK_order_    << endl;
     cout <<"===============================================\n";
 
     return;
@@ -527,19 +548,63 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **qn_){
         int j=0,s1,s2;
         double temp_inv=0.0, temp_visc=0.0, invFlux=0.0;
 
-        for(i=0; i<Nfaces; i++){
+        if(simdata_->time_scheme_type_=="upwind_leapfrog"){
+
+            for(i=0; i<Nfaces-1; i++){
+                for(k=0; k<Ndof; k++){
+                    //inviscid residual:
+                    temp_inv=0.0;
+                    for(j=0; j<scheme_order_+1; j++){
+                        s1 = stencil_index[j];
+                        invFlux = evaluate_inviscid_flux(qn_[i+Nghost_l+s1][k]);
+                        temp_inv  += invFlux * FD_coeff[j];
+                    }
+                    //viscous residual:
+                    temp_visc=0.0;
+                    for(j=0; j<scheme_order_+2; j++){
+                        s2 = stencil_index_2nd[j];
+                        temp_visc += qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
+                    }
+                    Resid_[i][k] = (- temp_inv * Idx )
+                            + ( temp_visc *Idx2*nu_diff );
+                }
+            }
+
+            // Last point at Nfaces-1:
+            i=Nfaces-1;
             for(k=0; k<Ndof; k++){
+                //inviscid residual:
                 temp_inv=0.0;
-                temp_visc=0.0;
                 for(j=0; j<scheme_order_+1; j++){
                     s1 = stencil_index[j];
-                    s2 = stencil_index_2nd[j];
                     invFlux = evaluate_inviscid_flux(qn_[i+Nghost_l+s1][k]);
                     temp_inv  += invFlux * FD_coeff[j];
+                }
+                //viscous residual:
+                temp_visc=qn_[2][k] * FD_coeff_2nd[j];
+                for(j=1; j<scheme_order_+2; j++){
+                    s2 = stencil_index_2nd[j];
                     temp_visc += qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
                 }
                 Resid_[i][k] = (- temp_inv * Idx )
                         + ( temp_visc *Idx2*nu_diff );
+            }
+
+        }else{
+            for(i=0; i<Nfaces; i++){
+                for(k=0; k<Ndof; k++){
+                    temp_inv=0.0;
+                    temp_visc=0.0;
+                    for(j=0; j<scheme_order_+1; j++){
+                        s1 = stencil_index[j];
+                        s2 = stencil_index_2nd[j];
+                        invFlux = evaluate_inviscid_flux(qn_[i+Nghost_l+s1][k]);
+                        temp_inv  += invFlux * FD_coeff[j];
+                        temp_visc += qn_[i+Nghost_l+s2][k] * FD_coeff_2nd[j];
+                    }
+                    Resid_[i][k] = (- temp_inv * Idx )
+                            + ( temp_visc *Idx2*nu_diff );
+                }
             }
         }
 
@@ -560,13 +625,14 @@ void FDSolverAdvecDiffus::UpdateResid(double **Resid_, double **qn_){
             Resid_[i][0] = - dfdx_[i] +  nu_diff * df2dx2_[i];
 
         Resid_[Nfaces-1][0] = Resid_[0][0];
+
     }
 
     return;
 }
 
 void FDSolverAdvecDiffus::filter_solution(double **qn_){
-        filter->filtered_sol(&qn_[Nghost_l]);  // filtering the solution
+    filter->filtered_sol(&qn_[Nghost_l]);  // filtering the solution
     return;
 }
 
@@ -653,19 +719,19 @@ void FDSolverAdvecDiffus::Compute_exact_sol_for_plot(){
 
     }else if(simdata_->wave_form_==0){
 
-       for(j=0; j<grid_->N_exact_ppts; j++){
+        for(j=0; j<grid_->N_exact_ppts; j++){
 
             xx = grid_->x_exact_ppts[j]- exact_sol_shift;
             Q_exact_pp[j][0] = eval_init_sol(xx);
-       }
+        }
 
     }else if(simdata_->wave_form_==3){
 
-       for(j=0; j<grid_->N_exact_ppts; j++){
+        for(j=0; j<grid_->N_exact_ppts; j++){
 
             xx = grid_->x_exact_ppts[j]- exact_sol_shift;
             Q_exact_pp[j][0] = eval_init_u_decay_burger_turb(xx);
-       }
+        }
 
     }
 
@@ -696,19 +762,19 @@ void FDSolverAdvecDiffus::Compute_exact_sol(){
 
     }else if(simdata_->wave_form_==0){
 
-       for(j=0; j<Nfaces; j++){
+        for(j=0; j<Nfaces; j++){
 
             xx = grid_->X[j]- exact_sol_shift;
             Q_exact[j][0] = eval_init_sol(xx);
-       }
+        }
 
     }else if(simdata_->wave_form_==3){
 
-       for(j=0; j<Nfaces; j++){
+        for(j=0; j<Nfaces; j++){
 
             xx = grid_->X[j]- exact_sol_shift;
             Q_exact[j][0] = eval_init_u_decay_burger_turb(xx);
-       }
+        }
 
     }
 
@@ -945,7 +1011,3 @@ void FDSolverAdvecDiffus::dump_errors(double &L1_error_, double &L2_error_){
 
     return;
 }
-
-
-
-

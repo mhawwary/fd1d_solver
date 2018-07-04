@@ -6,6 +6,7 @@
 #include"FDSolverAdvec.hpp"
 #include"FDSolverAdvecDiffus.hpp"
 #include"ExplicitTimeSolver.hpp"
+#include"TimeSolver.hpp"
 
 
 void InitSim(const int& argc, char** argv);
@@ -23,7 +24,7 @@ void logo();
 SimData   simdata;
 GridData *meshdata;
 FDSolver *fd_solver;
-ExplicitTimeSolver *time_solver;
+TimeSolver *time_solver;
 PadeFilter *filter_solver;
 
 void test_pade_filter();
@@ -50,7 +51,7 @@ void test_pade_filter(){
 
     filter_solver = new PadeFilter;
     std::string bound_type = "Periodic";
-    filter_solver->setup_filter(8,nnodes_
+    filter_solver->setup_filter(simdata.filter_type_,8,nnodes_
                                 ,0.40,bound_type);
 
 
@@ -142,7 +143,8 @@ void InitSim(const int& argc,char** argv){
 
         fd_solver->setup_solver(meshdata,simdata);
         fd_solver->InitSol();
-        time_solver = new ExplicitTimeSolver;
+        if(simdata.time_solver_type_=="explicit") // Runge-Kutta
+            time_solver = new ExplicitTimeSolver;
         time_solver->setupTimeSolver(fd_solver,&simdata);
         printf("\nIter No:%d, time: %f",time_solver->GetIter()
                ,fd_solver->GetPhyTime());
@@ -285,8 +287,10 @@ void RunSim(){
         FatalError_exit("unsteady data print flag error");
     }
 
-    printf("\nnIter to print unsteady data: %d, dt_last: %1.5e"
+    printf("\n----------------------------------------------------------\n");
+    printf("nIter to print unsteady data: %d, dt_last: %1.5e"
            ,n_iter_print, dt_last_print);
+    printf("\n----------------------------------------------------------\n");
 
     // First Solve:
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());

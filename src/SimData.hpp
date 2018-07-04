@@ -60,8 +60,9 @@ struct SimData {
     std::string scheme_type_; // explicit(classical)/implicit(compact)
     int scheme_order_=0;    // FD Scheme order
     int stencil_width_=1; // for explicit and DRP FD schemes
-    std::string filter_type_;   // pade(compact) /
-    int filter_order_=0;
+    std::string filter_type_;   // pade(compact) / BogeyBailly(explicit) / standard(explicit)
+    int filter_order_=1;        // for pade filters
+    int filter_stencil_size_=1; //for explicit filters
     int filter_activate_flag_=0;
     double filter_alpha_=0.0;
     // ./advec_eqn:
@@ -80,6 +81,8 @@ struct SimData {
     unsigned int maxIter_ = 1e6; // maximum number of iterations
     double Nperiods = 1.0; // no. of periods for simulation
     int end_of_sim_flag_=0;  // 1: use max_iteration as a stopping criteria if not converged or diverged
+    std::string time_scheme_type_; // leapfrog/RungeKutta
+    std::string time_solver_type_; // explicit/implicit
     // ./explicit:
     int RK_order_=0;        // Runge-Kutta type (0: euler FT, 2: SSPRK22, 3: SSPRK33)
     //------------------------------------------------------------------

@@ -6,11 +6,13 @@ PadeFilter::~PadeFilter(){
     Reset_filter();
 }
 
-void PadeFilter::setup_filter(const int& filter_OA_, const int& Nnodes_
-                              ,const double& alpha_filt_, string& bound_type_){
+void PadeFilter::setup_filter(std::string& in_filter_type_,const int& filter_OA_
+                              ,const int& Nnodes_,const double& alpha_filt_
+                              ,string& bound_type_){
 
     Bound_type = bound_type_;  // Current implementation allows only for periodic boundary conditions
     filter_order = filter_OA_;
+    filter_type= in_filter_type_;
     Nnodes = Nnodes_;   // no. of true mesh nodes
     n_linsys = Nnodes-2; // exculding the boundary points at 0 and Nnodes-1
     alpha_f = alpha_filt_;

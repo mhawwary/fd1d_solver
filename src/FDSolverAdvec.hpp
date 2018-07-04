@@ -3,6 +3,8 @@
 
 #include "FDSolver.hpp"
 #include "PadeFilter.hpp"
+#include "filter.hpp"
+#include "explicitfilter.hpp"
 
 
 class FDSolverAdvec:public FDSolver{
@@ -31,6 +33,7 @@ public:
    virtual void setup_coefficients();
 
    virtual void update_ghost_sol(double **Qn_);
+   virtual void update_previousTimelevelSolution(double **Qn_){} // Qnm1 at n-1
 
    virtual double eval_init_sol(const double& xx);
 
@@ -58,8 +61,6 @@ protected:
 
    double *RHS_f1_=nullptr;
 
-   PadeFilter *filter=nullptr;
-   double filter_alpha_=0.0;
 //   double *Qn_filt=nullptr; // one D array of nodal solutions
 
    int n_linsys=0;

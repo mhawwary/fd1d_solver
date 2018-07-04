@@ -40,14 +40,15 @@
    velocity_mean = 0.0  #  u(x) = sum(E(k) *cos(k))+ u_mean
 
 [space_solver]
-  eqn_set = Advection_Diffusion  # Advection / Diffusion / Advection_Diffusion
-  eqn_type = visc_burger # inv_burger / linear_advec / linear_diffus
-  scheme_type = implicit # explicit(classical)/implicit(compact)
-  order = 6
-  filter_type = pade    # pade(compact) / 
-  filter_order = 4
+  eqn_set = Advection  # Advection / Diffusion / Advection_Diffusion
+  eqn_type = linear_advec # inv_burger / linear_advec / linear_diffus
+  scheme_type = implicit # explicit(classical)/implicit(compact)/DRP4s7/BB4s9/BB4s11/BB4s13/Rem2s7/Rem2s9
+  order = 6              
+  filter_type = standard  # pade(compact) / BogeyBailly(explicit) / standard(explicit)
+  filter_order = 8
   filter_activate_flag = 0
-  filter_alpha = 0.40
+  filter_alpha = 0.1
+  filter_stencil_size = 9
   
   [./advec_eqn]
    upwind_biased = 1  # 1: for 3rd order scheme with upwind biased flux. If '0' then it is a fully upwind scheme
@@ -70,5 +71,9 @@
 # 1: use final time directly and then calculate no of periods,
 # 2:  use max_iteration as a stopping criteria if not converged or diverged
 
+ time_solver_type = explicit # explicit/implicit
+ time_scheme_type = upwind_leapfrog #leapfrog/upwind_leapfrog/RungeKutta for explicit solver 
+ 
  [./explicit]
-  RK_order = 3
+   RK_order = 3
+ [../implicit]

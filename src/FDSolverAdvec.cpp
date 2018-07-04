@@ -23,6 +23,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     scheme_order_ = simdata_->scheme_order_;
     filter_type_ = simdata_->filter_type_;
     filter_order_ = simdata_->filter_order_;
+    filter_stencil_size_ = simdata_->filter_stencil_size_;
     filter_activate_flag = simdata_->filter_activate_flag_;
     filter_alpha_ = simdata_->filter_alpha_;
 
@@ -111,10 +112,17 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
     Nfaces_tot = Nghost_l + Nfaces + Nghost_r;
 
     if(filter_activate_flag==1){
-        filter = new PadeFilter;
         std::string Bound_type = "Periodic";
-        filter->setup_filter(filter_order_,Nfaces,filter_alpha_
-                             ,Bound_type);
+        if(simdata_->filter_type_=="pade"){
+            filter = new PadeFilter();
+            filter->setup_filter(simdata_->filter_type_,filter_order_,Nfaces
+                                 ,filter_alpha_,Bound_type);
+        }else if(simdata_->filter_type_=="BogeyBailly"
+                 || simdata_->filter_type_=="standard"){
+            filter = new ExplicitFilter();
+            filter->setup_filter(simdata_->filter_type_,filter_stencil_size_,Nfaces
+                                 ,filter_alpha_,Bound_type);
+        }
     }
 
     Qn      =  new double* [Nfaces_tot];
@@ -187,8 +195,8 @@ void FDSolverAdvec::setup_coefficients(){
         if(scheme_order_==1){      // first order upwind scheme
             stencil_index[0] =  0;
             stencil_index[1] = -1;           //[j,j-1];
-            FD_coeff [0] =  1;
-            FD_coeff [1] = -1;
+            FD_coeff [0] =  1.0;
+            FD_coeff [1] = -1.0;
 
         } else if (scheme_order_==2) { // 2nd order central scheme
             stencil_index[0] =  1;
@@ -436,8 +444,10 @@ void FDSolverAdvec::CalcTimeStep(){
     cout <<"\nMax_iter: "<<simdata_->maxIter_<<endl;
 
     cout << "\nNumber of nodes: "<< grid_->Nfaces<<"  dx:  "<<grid_->dx<<endl;
-    cout << "Scheme  order : "<< simdata_->scheme_order_  << endl;
-    cout << "Runge-Kutta order : "<< simdata_->RK_order_    << endl;
+    cout << "Scheme  order    : "<< simdata_->scheme_order_  << endl;
+    cout << "Time scheme type : "<< simdata_->time_scheme_type_<<endl;
+    if(simdata_->time_scheme_type_=="RungeKutta")
+        cout << "Runge-Kutta order: "<< simdata_->RK_order_    << endl;
     cout <<"===============================================\n";
 
     return;
@@ -509,20 +519,6 @@ void FDSolverAdvec::UpdateResid(double **Resid_, double **qn_){
     update_ghost_sol(qn_);
     // Nodes loop to calculate and update the residual:
     //----------------------------------------------------
-
-    /*int j=0,s;
-    double temp=0.0;
-    for(i=0; i<Nfaces; i++){
-        for(k=0; k<Ndof; k++){
-            temp=0.0;
-            for(j=0; j<stencil_width_; j++){
-                s = stencil_index[j];
-                temp += qn_[i+Nghost_l+s][k] * FD_coeff[j];
-            }
-
-            Resid_[i][k] = - temp * Idx;
-        }
-    }*/
 
     if(scheme_type_=="explicit"
             || scheme_type_=="DRP4s7"
@@ -896,7 +892,7 @@ void FDSolverAdvec::dump_timeaccurate_errors(){
     fclose(solerror_out);
     emptyarray(fname);
 
-    printf("\tL1_time_proj: %2.5e\t L2_time_proj: %2.5e",L1_error_,L2_error_);
+    printf("\tL1_nodal: %2.5e\t L2_nodal: %2.5e",L1_error_,L2_error_);
 
     return;
 }
@@ -980,50 +976,6 @@ void FDSolverAdvec::dump_errors(double &L1_error_, double &L2_error_){
     return;
 }
 
-//void FDSolverAdvec::dump_errors_vs_time(double &L1_error_, double &L2_error_){
-
-//    char *fname=nullptr;
-//    fname = new char[100];
-
-//    sprintf(fname,"%serrors/time_err_CFL%1.3f_%1.3fT.dat"
-//            ,simdata_->case_postproc_dir
-//            ,CFL
-//            ,simdata_->Nperiods);
-
-//    FILE* solerror_out=fopen(fname,"at+");
-
-//    fprintf(solerror_out, "%1.10f %2.10e %2.10e\n"
-//            ,phy_time, L1_error_, L2_error_);
-
-//    fclose(solerror_out);
-//    emptyarray(fname);
-
-//    return;
-//}
-
-//double FDSolverAdvec::L1_error_time_nodal_sol(){
-//    register int j;
-//    double L1_error=0.0;
-
-//    for(j=0; j<Nfaces; j++)
-//        L1_error += fabs(Q_exact[j][0] - Qn[j+Nghost_l][0]);
-
-//    L1_error = L1_error/Nfaces;
-
-//    return L1_error;
-//}
-
-//double FDSolverAdvec::L2_error_time_nodal_sol(){
-//    register int j;
-//    double L2_error=0.0;
-
-//    for(j=0; j<Nfaces; j++)
-//        L2_error += pow((Q_exact[j][0] - Qn[j+Nghost_l][0]),2);
-
-//    L2_error = sqrt(L2_error/Nfaces);
-
-//    return L2_error;
-//}
 
 
 

@@ -6,6 +6,7 @@
 #include"general_tools.h"
 #include"global_var.h"
 #include"solver_tools.h"
+#include"filter.hpp"
 
 //struct SimData;
 //struct GridData;
@@ -96,6 +97,7 @@ protected:
    virtual void setup_coefficients()=0;
 
    virtual void update_ghost_sol(double **Qn_)=0;
+   virtual void update_previousTimelevelSolution(double **Qn_)=0; // Qnm1 at n-1
 
    virtual double eval_init_sol(const double& xx)=0;
 
@@ -112,12 +114,18 @@ protected:
    GridData *grid_=nullptr;
    SimData *simdata_=nullptr;
 
+   //Scheme parameters
    std::string scheme_type_;
    int scheme_order_=1;
-   int stencil_width_=1;
-   std::string filter_type_;
-   int filter_order_=1;
-   int filter_activate_flag =0;
+   int stencil_width_=1;   //scheme stencil width
+
+   // filter parameters
+   Filter *filter=nullptr;
+   double filter_alpha_=0.0;
+   std::string filter_type_;  // filter type
+   int filter_order_=1;        // for implicit
+   int filter_activate_flag =0;  //0: no filter
+   int filter_stencil_size_=1;  // the size of the filter stencil for explicit filters
 
    // explicit (classical) FD parameters:
    int *stencil_index=nullptr;
@@ -133,7 +141,9 @@ protected:
 
    int Ndof = 1;
 
-   double **Qn=nullptr;      // Nfaces_tot * Ndof long
+   double **Qn=nullptr;      // Nfaces_tot * Ndof long at n level
+
+//   double **Qnm1=nullptr;      // Nfaces_tot * Ndof long at n-1 level
 
    double **Qn_true=nullptr; // Nfaces * Ndof long
 
