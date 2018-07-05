@@ -146,22 +146,9 @@ void InitSim(const int& argc,char** argv){
         if(simdata.time_solver_type_=="explicit") // Runge-Kutta
             time_solver = new ExplicitTimeSolver;
         time_solver->setupTimeSolver(fd_solver,&simdata);
-        printf("\nIter No:%d, time: %f",time_solver->GetIter()
-               ,fd_solver->GetPhyTime());
         fd_solver->dump_timeaccurate_sol();
         fd_solver->dump_timeaccurate_errors();
         simdata.dump_python_inputfile();
-
-
-        //        if(simdata.filter_activate_flag_==1){
-        //            filter_solver = new PadeFilter;
-        //            filter_solver->setup_filter(fd_solver->GetNfaces(),simdata);
-        //        }
-
-        //setup_stencil();
-        //init_solution();
-        //iter_init = 0;
-        //restart_iter_=0;
 
     } else if(simdata.restart_flag==1){
         printf("\nReading Restart Data\n");
@@ -257,6 +244,9 @@ void RunSim(){
     double dt_last_print=0.0;
     double temp_tol=1e-8;
 
+    //======================================================================
+    //             Preparing simulation control variables
+    //======================================================================
     if(simdata.unsteady_data_print_flag_==0){  // use iter to print
         n_iter_print = simdata.unsteady_data_print_iter_;
         if(n_iter_print<=1)
@@ -276,23 +266,27 @@ void RunSim(){
         }else if((n_iter_print*dt_) < (simdata.unsteady_data_print_time_+temp_tol) ){
             dt_last_print = simdata.unsteady_data_print_time_ - (n_iter_print*dt_);
         }
-
         if(n_iter_print<=1)
             FatalError_exit("Warning: iter to print is  <= 1 ");
 
-    }else if(simdata.unsteady_data_print_flag_==2){ // print each multiple of time step
+    // print using the specified iter_print without dt changing except the last one
+    }else if(simdata.unsteady_data_print_flag_==2){
         n_iter_print = simdata.unsteady_data_print_iter_;
         dt_last_print=dt_;
     }else{
         FatalError_exit("unsteady data print flag error");
     }
 
-    printf("\n----------------------------------------------------------\n");
     printf("nIter to print unsteady data: %d, dt_last: %1.5e"
            ,n_iter_print, dt_last_print);
     printf("\n----------------------------------------------------------\n");
 
-    // First Solve:
+    printf("Iter No:%d, time: %f",time_solver->GetIter()
+           ,fd_solver->GetPhyTime());
+
+    //===========================
+    // Solve First Iteration
+    //===========================
     time_solver->ComputeInitialResid(fd_solver->GetNumSolution());
     time_solver->SolveOneStep(fd_solver->GetNumSolution());
     time_solver->space_solver->UpdatePhyTime(dt_);
@@ -307,7 +301,9 @@ void RunSim(){
         local_iter=0;
     }
 
-    // main solution loop:
+    //======================================================================
+    //                        Main Solution Loop
+    //======================================================================
     if(simdata.unsteady_data_print_flag_==0
             || simdata.unsteady_data_print_flag_==1){
         while ( fabs(gtime - simdata.t_end_) > (dt_+temp_tol) ){

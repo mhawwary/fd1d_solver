@@ -1,5 +1,6 @@
 [Case]
- title = decay_burg_turb_cFD_test   # sine wave / Gaussian / .....
+ title = decay_burg_turb_cFD_test   
+ title_mode = 0 # 0: default for testing, 1: use above strict title
  num_elements = 1023
  x_begin = 0.0
  x_end = 6.283185307

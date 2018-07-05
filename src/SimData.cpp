@@ -8,6 +8,7 @@ void SimData::Parse(const std::string &fname){
     // Case parameters:
     //-----------------------------
     case_title = gp_input("Case/title","test");
+    case_title_mode_ = gp_input("Case/title_mode",0);
     Nelem_ = gp_input("Case/num_elements",1);
     x0_ = gp_input("Case/x_begin",0.0);
     xf_ = gp_input("Case/x_end",1.0);
@@ -209,17 +210,6 @@ void SimData::setup_output_directory(){
         sprintf(time_scheme_keyword_,"_upwlpfrog");
     }
 
-//    if(scheme_type_=="explicit"){
-//        sprintf(scheme_keyword_,"FD",scheme_order_);
-//    }else if(scheme_type_=="implicit"){
-
-//    }else if(scheme_type_=="implicit"){
-
-//    }else{
-//        _notImplemented("spatial scheme type is not implemented");
-//        FatalError_exit("Exiting the code");
-//    }
-
     char *case_dir=nullptr;
     case_dir=new char[80];
     if(Sim_mode=="normal" || Sim_mode=="dt_const" || Sim_mode=="CFL_const" ){
@@ -324,25 +314,33 @@ void SimData::setup_output_directory(){
 
     }else _notImplemented("Simulation mode");
 
-
-    char *main_dir=nullptr;
-    main_dir = new char[25];
-    if(eqn_set=="Advection"){
-        sprintf(main_dir,"Results");
-    }else if (eqn_set=="Diffusion"){
-        sprintf(main_dir ,"Results_diffus");
-    }else if (eqn_set=="Advection_Diffusion"){
-        sprintf(main_dir ,"Results_AdvecDiffus");
-    }else{
-        FatalError_exit("Equation set when specifying output directory");
-    }
-
     char *current_working_dir=new char[1000];
     getcwd(current_working_dir,1000);
 
     char* results_dir=nullptr;
     results_dir = new char[1050];
-    sprintf(results_dir,"%s/%s",current_working_dir,main_dir);
+
+    char *main_dir=nullptr;
+    main_dir = new char[25];
+
+    if(case_title_mode_==1){
+        sprintf(main_dir,".");
+        sprintf(results_dir,"%s",current_working_dir);
+    }else if(case_title_mode_==0){
+        if(eqn_set=="Advection"){
+            sprintf(main_dir,"./Results");
+        }else if (eqn_set=="Diffusion"){
+            sprintf(main_dir ,"./Results_diffus");
+        }else if (eqn_set=="Advection_Diffusion"){
+            sprintf(main_dir ,"./Results_AdvecDiffus");
+        }else{
+            FatalError_exit("Wrong equation set when specifying\
+                            output directory");
+        }
+        sprintf(results_dir,"%s/%s",current_working_dir,main_dir);
+    }else {
+        FatalError_exit("Wrong case title mode, use either 0 or 1");
+    }
 
     stat(results_dir, &statbuf);
     int test0=0;
@@ -382,6 +380,7 @@ void SimData::setup_output_directory(){
         chdir(case_dir);
     }
 
+    mkdir("./input",0777);
     mkdir("./nodal",0777);
     mkdir("./errors",0777);
     mkdir("./time_data",0777);
@@ -405,7 +404,11 @@ void SimData::dump_python_inputfile(){
     char *fname=nullptr;
     fname = new char[100];
 
-    sprintf(fname,"./input/python_input.in");
+    if(case_title_mode_==1){
+        sprintf(fname,"%s/input/python_input.in",case_postproc_dir);
+    }else if(case_title_mode_==0){
+        sprintf(fname,"./input/python_input.in");
+    }
 
     FILE* python_out = fopen(fname,"w");
 
