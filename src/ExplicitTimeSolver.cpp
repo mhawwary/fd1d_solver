@@ -130,6 +130,8 @@ void ExplicitTimeSolver::SolveOneStep(double **qn_){
         }else{
             upwind_leapfrog(qn_);
         }
+    }else{
+        _notImplemented("Explicit time scheme type");
     }
 
     IterNo++;

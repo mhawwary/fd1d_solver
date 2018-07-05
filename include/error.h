@@ -45,7 +45,7 @@
 << abs(x-y) <<" ---------- " << "\n" << #x << setw(15) << x << "\n" << #y << setw(15) << y<<endl; cin.get(); }
 
 #define _notImplemented(s){    \
-         printf("\nThis option '%s' is not implemented yet \n at %s:%d\n",s,__FILE__,__LINE__);  \
+         printf("\n\nThis option ''%s'' is not implemented yet \n at %s:%d\n\n",s,__FILE__,__LINE__);  \
     exit(1);}
 
 #define _print(s) printf("\n---%s\n",s);
