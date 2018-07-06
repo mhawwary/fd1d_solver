@@ -32,8 +32,13 @@ void FDSolverAdvecDiffus::setup_solver(GridData* meshdata_, SimData& osimdata_){
             Nghost_r=0;
 
         }else if(scheme_order_==2){
+            if(simdata_->upwind_biased_==0){
             Nghost_l=1;
             Nghost_r=1;
+            }else if(simdata_->upwind_biased_==2){
+                Nghost_l=2;
+                Nghost_r=1;
+            }
 
         }else if(scheme_order_==3){
 
@@ -173,19 +178,27 @@ void FDSolverAdvecDiffus::setup_coefficients(){
             FD_coeff_2nd [2] =  1.0;
 
         } else if (scheme_order_==2) { // 2nd order central scheme
+            // Frist derivative
+            if(simdata_->upwind_biased_==0) {  // central:
+                stencil_index[0] =  1;
+                stencil_index[1] =  0;
+                stencil_index[2] = -1;           //[j+1,j,j-1];
+                FD_coeff [0] =  0.5;
+                FD_coeff [1] =  0.0;
+                FD_coeff [2] = -0.5;
+            }else if(simdata_->upwind_biased_==2) {  // fully upwind:
+                stencil_index[0] =  0;
+                stencil_index[1] = -1;
+                stencil_index[2] = -2;           //[j,j-1,j-2];
+                FD_coeff [0] =  1.5;
+                FD_coeff [1] = -2.0;
+                FD_coeff [2] = -0.5;
+            }
 
-            stencil_index[0] =  1;
-            stencil_index[1] =  0;
-            stencil_index[2] = -1;           //[j+1,j,j-1];
-
+            // 2nd derivative
             stencil_index_2nd[0] = stencil_index[0];
             stencil_index_2nd[1] = stencil_index[1];
             stencil_index_2nd[2] = stencil_index[2];
-
-            FD_coeff [0] =  0.5;
-            FD_coeff [1] =  0.0;
-            FD_coeff [2] = -0.5;
-
             FD_coeff_2nd [0] =  1.0;
             FD_coeff_2nd [1] = -2.0;
             FD_coeff_2nd [2] =  1.0;
@@ -248,7 +261,7 @@ void FDSolverAdvecDiffus::setup_coefficients(){
                 stencil_index[3] = -1;
                 stencil_index[4] = -2;
                 stencil_index[5] = -3;
-                stencil_index[6] = -4;  //[j+3,j+2,j+1,j,j-1,j-2,j-3];
+                stencil_index[6] = -4;  //[j+2,j+1,j,j-1,j-2,j-3,j-4];
 
                 FD_coeff [0] =  -1.0/30.0;
                 FD_coeff [1] =  0.40;
