@@ -39,7 +39,7 @@ void FDSolverAdvec::setup_solver(GridData* meshdata_, SimData& osimdata_){
             Nghost_r=1;
             }else if(simdata_->upwind_biased_==2){
                 Nghost_l=2;
-                Nghost_r=1;
+                Nghost_r=0;
             }
             stencil_width_=3;
 
