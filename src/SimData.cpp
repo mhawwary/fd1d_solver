@@ -404,11 +404,13 @@ void SimData::dump_python_inputfile(){
     char *fname=nullptr;
     fname = new char[100];
 
-    if(case_title_mode_==1){
-        sprintf(fname,"%s/input/python_input.in",case_postproc_dir);
-    }else if(case_title_mode_==0){
-        sprintf(fname,"./input/python_input.in");
-    }
+//    if(case_title_mode_==1){
+//        sprintf(fname,"%s/input/python_input.in",case_postproc_dir);
+//    }else if(case_title_mode_==0){
+//        sprintf(fname,"./input/python_input.in");
+//    }
+
+    sprintf(fname,"%s/input/python_input.in",case_postproc_dir);
 
     FILE* python_out = fopen(fname,"w");
 
