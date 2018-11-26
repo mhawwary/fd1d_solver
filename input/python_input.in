@@ -1,4 +1,4 @@
-dir:Results_AdvecDiffus/burgersTest/FD2_lpfrog/case01/
+dir:./Results_AdvecDiffus/burgersTest/FD2RK3/case01/
 errors:errors/errors
 exact:nodal/u_exact
 numerical:nodal/u_num
@@ -10,11 +10,11 @@ mode:dt_const
 scheme_type:explicit
 FDOA:2
 time_solver:explicit
-time_scheme:leapfrog
-RK:0
-Nelem:10000
+time_scheme:RungeKutta
+RK:3
+Nelem:1200
 Nexact:100
-CFL:0.6081
-dt:5.000e-06
-t_end:3.000
-T:0.477
+CFL:0.2918
+dt:2.000e-05
+t_end:0.150
+T:0.024

@@ -11,7 +11,7 @@ import csv
 
 from subprocess import call, run, PIPE, Popen
 from sys_cmd_toolbox import system_process    # locally defined file
-from fft_toolbox_python import load_data, compute_fft, compute_Etotal
+from fft_toolbox_python import load_data, compute_fft, compute_Etotal, compute_exact_init_Energy
 
 plt.rc('legend',**{'loc':'upper right'});
 plt.rcParams[u'legend.fontsize'] = 15
@@ -141,6 +141,7 @@ def decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL
     
     # compute fft:
     k_freq, u_amp, KEnerg = compute_fft(u_num);
+    k_ex, E_ex, k_init, E_init = compute_exact_init_Energy()
 
     del fname
 
@@ -173,7 +174,7 @@ def decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL
     fig.set_size_inches(13.0, 9.0, forward=True)
     fig.tight_layout(pad=0, w_pad=10.0, h_pad=10.0,rect=(0.0,0.0,1.0,0.985))
     
-    temp_name = 'sol_vs_x_p' + FD + 'RK' + RK +'_'+ sim_name \
+    temp_name = 'sol_vs_x_p' + FD + 'RK' + RK +'_Nn' + str(Nelem) + '_'+ sim_name \
               + '_t'+ str(tt_);
            
     figname = dir_res + str('tempfig/') + temp_name+'.eps'
@@ -187,14 +188,16 @@ def decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL
     
     ###################### Plot the fft computed Energy spectrum ##########################
     fig, ax = plt.subplots(frameon='True')
-    ax.plot(k_freq, KEnerg)
+    ax.plot(k_freq, KEnerg,'--b', label=r'E$_{num}$',lw=0.7)
+    ax.plot(k_init, E_init, ':k', label=r'E$_{init}$',lw=0.7)
+    ax.plot(k_ex, E_ex*0.08, '-k', label=r'E $\propto$ k$^{-2}$',lw=0.7)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.legend(fontsize=19,edgecolor='black')
     ax.set_facecolor('white')
     ax.set_xlabel(r'$k$', labelpad=2,fontsize=24);
     ax.set_ylabel(r'$E$', labelpad=2, fontsize=24);
-    ax.set_xlim(10**0, 10**3)
+    ax.set_xlim(10**0, 10**4)
     ax.set_ylim(10**-10, 10 ** -1)
     ax.tick_params(axis='both', which='both', labelsize=24)
     
@@ -205,7 +208,7 @@ def decay_burg_turb_temp_sol_plot(dir_res, mode, scheme_name, FD, RK, Nelem, CFL
     fig.set_size_inches(13.0, 9.0, forward=True)
     fig.tight_layout(pad=0, w_pad=10.0, h_pad=10.0,rect=(0.0,0.0,1.0,0.985))
     
-    temp_name = 'FFT_p' + FD + 'RK' + RK +'_'+ sim_name \
+    temp_name = 'KE_FD' + FD + 'RK' + RK +'_Nn' + str(Nelem) +'_'+ sim_name \
               + '_t'+ str(tt_);
     figname = dir_res + str('tempfig/') + temp_name+'.eps'
     fig.savefig(figname,format='eps',bbox='tight')
